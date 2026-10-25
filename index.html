@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- 登录/注册界面 -->
   <div id="auth-panel">
     <h2>欢迎来到聊天室</h2>
     <input type="text" id="username" placeholder="用户名" maxlength="10">
@@ -19,11 +18,14 @@
     <p id="auth-msg"></p>
   </div>
 
-  <!-- 聊天界面 (默认隐藏) -->
   <div id="chat-panel" style="display: none;">
     <div id="header">
       <span>在线聊天室</span>
-      <button id="logout-btn" onclick="logout()">退出</button>
+      <div>
+        <button id="avatar-btn" onclick="document.getElementById('avatar-input').click()">换头像</button>
+        <input type="file" id="avatar-input" accept="image/*" style="display: none;" onchange="uploadAvatar(this)">
+        <button id="logout-btn" onclick="logout()">退出</button>
+      </div>
     </div>
     <div id="messages"></div>
     <div id="input-area">
