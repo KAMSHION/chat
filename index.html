@@ -42,6 +42,7 @@
           <span id="current-user"></span>
           <button id="avatar-btn" type="button" onclick="document.getElementById('avatar-input').click()">更换头像</button>
           <input type="file" id="avatar-input" accept="image/*" aria-label="选择头像" hidden onchange="uploadAvatar(this)">
+          <button id="members-btn" type="button">成员</button>
           <button id="logout-btn" type="button" onclick="logout()">退出</button>
         </div>
       </header>
@@ -67,6 +68,17 @@
         </div>
       </form>
     </section>
+
+    <dialog id="members-dialog" aria-labelledby="members-title">
+      <div class="members-dialog-header">
+        <div>
+          <h2 id="members-title">聊天室成员</h2>
+          <p id="members-count">正在加载...</p>
+        </div>
+        <button id="members-close" type="button" aria-label="关闭成员列表">×</button>
+      </div>
+      <div id="members-list" aria-live="polite"></div>
+    </dialog>
   </main>
   <script src="app.js"></script>
 </body>

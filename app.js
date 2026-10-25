@@ -93,6 +93,60 @@ async function loadUsers() {
       if (u.avatar_base64) userAvatars[u.id] = u.avatar_base64;
     });
   }
+  return res;
+}
+
+async function showMembers() {
+  const dialog = document.getElementById('members-dialog');
+  const list = document.getElementById('members-list');
+  const count = document.getElementById('members-count');
+  list.replaceChildren();
+  count.textContent = '正在加载...';
+  dialog.showModal();
+
+  try {
+    const res = await loadUsers();
+    if (res.error) throw new Error(res.error);
+
+    const users = res.users || [];
+    count.textContent = `共 ${users.length} 位成员`;
+    if (users.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'members-message';
+      empty.textContent = '暂无成员';
+      list.appendChild(empty);
+      return;
+    }
+
+    users.forEach(user => {
+      const item = document.createElement('div');
+      item.className = 'member-item';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'member-avatar';
+      if (user.avatar_base64) {
+        const image = document.createElement('img');
+        image.src = user.avatar_base64;
+        image.alt = '';
+        avatar.appendChild(image);
+      } else {
+        avatar.textContent = user.username.charAt(0).toUpperCase();
+      }
+
+      const username = document.createElement('span');
+      username.className = 'member-name';
+      username.textContent = user.username;
+      item.append(avatar, username);
+      list.appendChild(item);
+    });
+  } catch (error) {
+    count.textContent = '成员加载失败';
+    const message = document.createElement('p');
+    message.className = 'members-message error';
+    message.textContent = error.message || '请检查网络后重试。';
+    list.appendChild(message);
+    console.error('加载成员失败：', error);
+  }
 }
 
 // 拉取消息
@@ -273,6 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
   const authForm = document.getElementById('auth-form');
   const messageForm = document.getElementById('message-form');
+  const membersDialog = document.getElementById('members-dialog');
 
   authForm.addEventListener('submit', event => {
     event.preventDefault();
@@ -289,6 +344,9 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     sendMessage();
   });
+
+  document.getElementById('members-btn').addEventListener('click', showMembers);
+  document.getElementById('members-close').addEventListener('click', () => membersDialog.close());
 
   if (input) {
     input.addEventListener('input', updateComposer);

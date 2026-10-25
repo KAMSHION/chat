@@ -283,6 +283,113 @@ textarea:focus-visible {
   background: #f6f8fc;
 }
 
+#members-dialog {
+  width: min(400px, calc(100% - 32px));
+  max-height: min(600px, 80vh);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #e5e9f1;
+  border-radius: 18px;
+  color: #192338;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(45, 62, 106, .2);
+}
+
+#members-dialog::backdrop {
+  background: rgba(28, 38, 61, .34);
+  backdrop-filter: blur(3px);
+}
+
+.members-dialog-header {
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.members-dialog-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.members-dialog-header p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#members-dialog #members-close {
+  width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  color: #737e92;
+  background: #f3f5f9;
+  font-size: 22px;
+  line-height: 1;
+}
+
+#members-list {
+  max-height: min(440px, calc(80vh - 80px));
+  padding: 8px 12px;
+  overflow-y: auto;
+}
+
+.member-item {
+  min-height: 58px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-radius: 11px;
+}
+
+.member-item:hover {
+  background: #f7f8fc;
+}
+
+.member-avatar {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #5668c8;
+  background: #e4e9ff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.member-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.member-name {
+  overflow: hidden;
+  color: #39445a;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.members-message {
+  margin: 0;
+  padding: 26px 12px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.members-message.error {
+  color: #c64d5a;
+}
+
 #messages {
   flex: 1;
   min-height: 0;
@@ -554,6 +661,11 @@ textarea:focus-visible {
   #header {
     min-height: 72px;
     padding: 12px;
+    gap: 8px;
+  }
+
+  .chat-heading {
+    gap: 8px;
   }
 
   .header-actions {
@@ -566,8 +678,8 @@ textarea:focus-visible {
 
   #header button {
     min-height: 34px;
-    padding: 0 9px;
-    font-size: 11px;
+    padding: 0 7px;
+    font-size: 10px;
   }
 
   #messages {
