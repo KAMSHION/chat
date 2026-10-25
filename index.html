@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="day">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +17,7 @@
 
       <form id="auth-form">
         <label for="account">账户名</label>
-        <input type="text" id="account" placeholder="请输入账户名" maxlength="30" autocomplete="username" required>
+        <input type="text" id="account" placeholder="请输入账户名" maxlength="30" pattern="[A-Za-z0-9_$]+" title="账户名只能包含大小写英文字母、数字、下划线和美元符号（$）" autocomplete="username" required>
         <label for="password">密码</label>
         <input type="password" id="password" placeholder="请输入密码" autocomplete="current-password" required>
         <div class="btn-group">
@@ -37,7 +37,7 @@
 
       <form id="register-form">
         <label for="register-account">账户名（唯一）</label>
-        <input type="text" id="register-account" placeholder="用于登录，不能与他人重复" maxlength="30" autocomplete="username" required>
+        <input type="text" id="register-account" placeholder="用于登录，不能与他人重复" maxlength="30" pattern="[A-Za-z0-9_$]+" title="账户名只能包含大小写英文字母、数字、下划线和美元符号（$）" autocomplete="username" required>
         <label for="display-name">用户名（对外展示）</label>
         <input type="text" id="display-name" placeholder="其他成员看到的名称" maxlength="20" autocomplete="nickname" required>
         <label for="register-password">密码</label>
@@ -66,6 +66,8 @@
           <button id="avatar-btn" type="button" onclick="document.getElementById('avatar-input').click()">更换头像</button>
           <input type="file" id="avatar-input" accept="image/*" aria-label="选择头像" hidden onchange="uploadAvatar(this)">
           <button id="members-btn" type="button">成员</button>
+          <button id="change-name-btn" type="button">更改用户名</button>
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">切换到极夜</button>
           <button id="logout-btn" type="button" onclick="logout()">退出</button>
         </div>
       </header>
@@ -101,6 +103,44 @@
         <button id="members-close" type="button" aria-label="关闭成员列表">×</button>
       </div>
       <div id="members-list" aria-live="polite"></div>
+    </dialog>
+
+    <dialog id="username-dialog" aria-labelledby="username-dialog-title">
+      <div class="members-dialog-header">
+        <div>
+          <h2 id="username-dialog-title">更改用户名</h2>
+          <p>新用户名将显示给聊天室所有成员</p>
+        </div>
+        <button id="username-dialog-close" type="button" aria-label="关闭">×</button>
+      </div>
+      <form id="username-form" class="username-form">
+        <label for="new-display-name">新用户名</label>
+        <input id="new-display-name" type="text" maxlength="20" autocomplete="nickname" required>
+        <p id="username-msg" role="status" aria-live="polite"></p>
+        <div class="btn-group">
+          <button id="username-cancel-btn" type="button" class="secondary-btn">取消</button>
+          <button id="username-save-btn" type="submit" class="primary-btn">保存</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="mute-dialog" aria-labelledby="mute-title">
+      <div class="members-dialog-header">
+        <div>
+          <h2 id="mute-title">将用户禁言</h2>
+          <p>设置禁言时长，单位为分钟</p>
+        </div>
+        <button id="mute-dialog-close" type="button" aria-label="关闭">×</button>
+      </div>
+      <form id="mute-form" class="username-form">
+        <label id="mute-duration-label" for="mute-duration">禁言时长（min）</label>
+        <input id="mute-duration" type="number" min="1" step="1" placeholder="输入分钟数（min）" required>
+        <p id="mute-msg" role="status" aria-live="polite"></p>
+        <div class="btn-group">
+          <button id="mute-cancel-btn" type="button" class="secondary-btn">取消</button>
+          <button id="mute-confirm-btn" type="submit" class="primary-btn">确认</button>
+        </div>
+      </form>
     </dialog>
   </main>
   <script src="app.js"></script>

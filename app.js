@@ -3,6 +3,8 @@ let pollingTimer = null;
 let messagesFetchInProgress = false;
 let messagesFetchQueued = false;
 let myUserId = 0;
+let myRole = 'user';
+let muteTarget = null;
 let userAvatars = {}; // 存放所有用户的头像字典 {id: base64}
 
 async function api(action, method = 'GET', body = null) {
@@ -21,6 +23,10 @@ function showAuthMessage(message, isSuccess = false) {
   msg.classList.toggle('success', isSuccess);
 }
 
+function isValidAccount(account) {
+  return /^[A-Za-z0-9_$]+$/.test(account);
+}
+
 async function register() {
   const account = document.getElementById('register-account').value.trim();
   const displayName = document.getElementById('display-name').value.trim();
@@ -31,6 +37,10 @@ async function register() {
 
   if (!account || !displayName || !password || !confirmPassword) {
     message.textContent = '请完整填写所有信息';
+    return;
+  }
+  if (!isValidAccount(account)) {
+    message.textContent = '账户名只能包含大小写英文字母、数字、下划线和美元符号（$）';
     return;
   }
   if (password !== confirmPassword) {
@@ -58,12 +68,17 @@ async function login() {
   const account = document.getElementById('account').value.trim();
   const p = document.getElementById('password').value;
   if (!account || !p) return showAuthMessage('请填写账户名和密码');
+  if (!isValidAccount(account)) {
+    showAuthMessage('账户名只能包含大小写英文字母、数字、下划线和美元符号（$）');
+    return;
+  }
   try {
     const res = await api('login', 'POST', { account, password: p });
     if (res.error) {
       showAuthMessage(res.error);
     } else {
       myUserId = res.userId;
+      myRole = ['super_admin', 'admin'].includes(res.role) ? res.role : 'user';
       document.getElementById('current-user').textContent = res.displayName;
       document.getElementById('auth-panel').style.display = 'none';
       document.getElementById('register-panel').hidden = true;
@@ -88,6 +103,12 @@ function showLoginPage(message = '', isSuccess = false) {
   document.getElementById('auth-panel').style.display = '';
   showAuthMessage(message, isSuccess);
   document.getElementById('account').focus();
+}
+
+function roleLabel(role) {
+  if (role === 'super_admin') return '超管';
+  if (role === 'admin') return '管理';
+  return 'Lv.1';
 }
 
 // 登录后启动
@@ -153,6 +174,7 @@ async function showMembers() {
     users.forEach(user => {
       const item = document.createElement('div');
       item.className = 'member-item';
+      item.dataset.userId = user.id;
 
       const avatar = document.createElement('div');
       avatar.className = 'member-avatar';
@@ -168,7 +190,31 @@ async function showMembers() {
       const displayName = document.createElement('span');
       displayName.className = 'member-name';
       displayName.textContent = user.display_name;
-      item.append(avatar, displayName);
+
+      const identity = document.createElement('div');
+      identity.className = 'member-identity';
+      const badge = document.createElement('span');
+      badge.className = `user-badge${user.role === 'super_admin' ? ' super-admin' : user.role === 'admin' ? ' administrator' : ''}`;
+      badge.textContent = roleLabel(user.role);
+      identity.append(displayName, badge);
+      item.append(avatar, identity);
+
+      if (user.muted_until > Date.now()) {
+        const muteState = document.createElement('span');
+        muteState.className = 'member-mute-state';
+        muteState.textContent = `禁言至 ${new Date(user.muted_until).toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+        item.appendChild(muteState);
+      }
+
+      if (['super_admin', 'admin'].includes(myRole)) {
+        const muteButton = document.createElement('button');
+        muteButton.className = 'member-mute-btn';
+        muteButton.type = 'button';
+        muteButton.textContent = '禁言';
+        muteButton.addEventListener('click', () => openMuteDialog(user));
+        item.appendChild(muteButton);
+      }
+
       list.appendChild(item);
     });
   } catch (error) {
@@ -209,6 +255,7 @@ async function fetchMessages() {
           const div = document.createElement('div');
           div.className = 'message' + (isMine ? ' mine' : '');
           div.dataset.messageId = msg.id;
+          div.dataset.userId = msg.user_id;
 
           const avatarDiv = document.createElement('div');
           avatarDiv.className = 'avatar';
@@ -231,9 +278,9 @@ async function fetchMessages() {
           senderDiv.className = 'sender';
 
           const badgeDiv = document.createElement('span');
-          const isSuperAdmin = msg.display_name === 'KAMSHION';
-          badgeDiv.className = `user-badge${isSuperAdmin ? ' super-admin' : ''}`;
-          badgeDiv.textContent = isSuperAdmin ? '超管' : 'Lv.1';
+          const isSuperAdmin = msg.role === 'super_admin';
+          badgeDiv.className = `user-badge${isSuperAdmin ? ' super-admin' : msg.role === 'admin' ? ' administrator' : ''}`;
+          badgeDiv.textContent = roleLabel(msg.role);
 
           const usernameSpan = document.createElement('span');
           usernameSpan.className = 'sender-name';
@@ -291,6 +338,129 @@ async function sendMessage() {
     console.error(error);
   } finally {
     updateComposer();
+  }
+}
+
+async function changeDisplayName(event) {
+  event.preventDefault();
+  const input = document.getElementById('new-display-name');
+  const message = document.getElementById('username-msg');
+  const saveButton = document.getElementById('username-save-btn');
+  const displayName = input.value.trim();
+  message.textContent = '';
+  message.classList.remove('success');
+
+  if (!displayName) {
+    message.textContent = '用户名不能为空';
+    return;
+  }
+
+  saveButton.disabled = true;
+  try {
+    const res = await api('changeDisplayName', 'POST', { display_name: displayName });
+    if (res.error) {
+      message.textContent = res.error;
+      return;
+    }
+
+    document.getElementById('current-user').textContent = res.displayName;
+    document.querySelectorAll('.message').forEach(row => {
+      if (Number(row.dataset.userId) !== Number(myUserId)) return;
+      const name = row.querySelector('.sender-name');
+      const badge = row.querySelector('.user-badge');
+      const avatar = row.querySelector('.avatar');
+      if (name) name.textContent = res.displayName;
+      if (badge) {
+        badge.textContent = roleLabel(myRole);
+        badge.classList.toggle('super-admin', myRole === 'super_admin');
+        badge.classList.toggle('administrator', myRole === 'admin');
+      }
+      if (avatar && !avatar.querySelector('img')) {
+        avatar.textContent = res.displayName.charAt(0).toUpperCase();
+      }
+    });
+
+    const member = document.querySelector(`.member-item[data-user-id="${myUserId}"] .member-name`);
+    if (member) member.textContent = res.displayName;
+    message.textContent = '用户名已更新';
+    message.classList.add('success');
+    window.setTimeout(() => document.getElementById('username-dialog').close(), 500);
+  } catch (error) {
+    message.textContent = '更新失败，请检查网络后重试。';
+    console.error('更改用户名失败：', error);
+  } finally {
+    saveButton.disabled = false;
+  }
+}
+
+function openMuteDialog(user) {
+  muteTarget = user;
+  document.getElementById('mute-title').textContent = `将用户${user.display_name}禁言`;
+  document.getElementById('mute-duration-label').textContent = `禁言用户${user.display_name}（min）`;
+  document.getElementById('mute-duration').value = '';
+  document.getElementById('mute-msg').textContent = '';
+  document.getElementById('mute-dialog').showModal();
+  document.getElementById('mute-duration').focus();
+}
+
+async function muteMember(event) {
+  event.preventDefault();
+  if (!muteTarget) return;
+  const durationInput = document.getElementById('mute-duration');
+  const message = document.getElementById('mute-msg');
+  const confirmButton = document.getElementById('mute-confirm-btn');
+  const durationMinutes = Number(durationInput.value);
+  message.textContent = '';
+  message.classList.remove('success');
+
+  if (!Number.isSafeInteger(durationMinutes) || durationMinutes <= 0) {
+    message.textContent = '请输入大于0的整数分钟';
+    return;
+  }
+
+  confirmButton.disabled = true;
+  try {
+    const res = await api('muteUser', 'POST', {
+      user_id: muteTarget.id,
+      duration_minutes: durationMinutes
+    });
+    if (res.error) {
+      message.textContent = res.error;
+      return;
+    }
+
+    message.textContent = `已将${res.displayName}禁言 ${durationMinutes} 分钟`;
+    message.classList.add('success');
+    const member = document.querySelector(`.member-item[data-user-id="${res.userId}"]`);
+    if (member) {
+      let state = member.querySelector('.member-mute-state');
+      if (!state) {
+        state = document.createElement('span');
+        state.className = 'member-mute-state';
+        member.insertBefore(state, member.querySelector('.member-mute-btn'));
+      }
+      state.textContent = `禁言至 ${new Date(res.mutedUntil).toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    window.setTimeout(() => document.getElementById('mute-dialog').close(), 700);
+  } catch (error) {
+    message.textContent = '禁言失败，请检查网络后重试。';
+    console.error('禁言成员失败：', error);
+  } finally {
+    confirmButton.disabled = false;
+  }
+}
+
+function setTheme(theme) {
+  const isNight = theme === 'night';
+  document.documentElement.dataset.theme = isNight ? 'night' : 'day';
+  const toggle = document.getElementById('theme-toggle');
+  toggle.textContent = isNight ? '切换到白昼' : '切换到极夜';
+  toggle.setAttribute('aria-pressed', String(isNight));
+  document.querySelector('meta[name="theme-color"]').content = isNight ? '#111827' : '#f4f7fb';
+  try {
+    localStorage.setItem('chat-theme', isNight ? 'night' : 'day');
+  } catch (error) {
+    console.error('无法保存主题偏好：', error);
   }
 }
 
@@ -361,6 +531,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const registerForm = document.getElementById('register-form');
   const messageForm = document.getElementById('message-form');
   const membersDialog = document.getElementById('members-dialog');
+  const usernameDialog = document.getElementById('username-dialog');
+  const muteDialog = document.getElementById('mute-dialog');
+
+  let savedTheme = 'day';
+  try {
+    savedTheme = localStorage.getItem('chat-theme') === 'night' ? 'night' : 'day';
+  } catch (error) {
+    console.error('无法读取主题偏好：', error);
+  }
+  setTheme(savedTheme);
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    setTheme(document.documentElement.dataset.theme === 'night' ? 'day' : 'night');
+  });
 
   authForm.addEventListener('submit', event => {
     event.preventDefault();
@@ -383,6 +566,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('members-btn').addEventListener('click', showMembers);
   document.getElementById('members-close').addEventListener('click', () => membersDialog.close());
+  document.getElementById('change-name-btn').addEventListener('click', () => {
+    document.getElementById('new-display-name').value = document.getElementById('current-user').textContent;
+    document.getElementById('username-msg').textContent = '';
+    document.getElementById('username-msg').classList.remove('success');
+    usernameDialog.showModal();
+    document.getElementById('new-display-name').focus();
+  });
+  document.getElementById('username-dialog-close').addEventListener('click', () => usernameDialog.close());
+  document.getElementById('username-cancel-btn').addEventListener('click', () => usernameDialog.close());
+  document.getElementById('username-form').addEventListener('submit', changeDisplayName);
+  document.getElementById('mute-dialog-close').addEventListener('click', () => muteDialog.close());
+  document.getElementById('mute-cancel-btn').addEventListener('click', () => muteDialog.close());
+  document.getElementById('mute-form').addEventListener('submit', muteMember);
 
   if (input) {
     input.addEventListener('input', updateComposer);
