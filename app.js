@@ -2,7 +2,6 @@ let lastMsgId = 0;
 let pollingTimer = null;
 let messagesFetchInProgress = false;
 let messagesFetchQueued = false;
-let myUsername = '';
 let myUserId = 0;
 let userAvatars = {}; // 存放所有用户的头像字典 {id: base64}
 
@@ -23,32 +22,51 @@ function showAuthMessage(message, isSuccess = false) {
 }
 
 async function register() {
-  const u = document.getElementById('username').value.trim();
-  const p = document.getElementById('password').value;
-  if (!u || !p) return showAuthMessage('请填写用户名和密码');
+  const account = document.getElementById('register-account').value.trim();
+  const displayName = document.getElementById('display-name').value.trim();
+  const password = document.getElementById('register-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+  const message = document.getElementById('register-msg');
+  message.classList.remove('success');
+
+  if (!account || !displayName || !password || !confirmPassword) {
+    message.textContent = '请完整填写所有信息';
+    return;
+  }
+  if (password !== confirmPassword) {
+    message.textContent = '两次输入的密码不一致';
+    return;
+  }
+
   try {
-    const res = await api('register', 'POST', { username: u, password: p });
-    if (res.error) showAuthMessage(res.error);
-    else showAuthMessage('注册成功，请登录。', true);
+    const res = await api('register', 'POST', { account, display_name: displayName, password });
+    if (res.error) {
+      message.textContent = res.error;
+      return;
+    }
+    document.getElementById('auth-form').reset();
+    document.getElementById('register-form').reset();
+    showLoginPage('注册成功，请使用账户名登录。', true);
+    document.getElementById('account').value = account;
   } catch (error) {
-    showAuthMessage('暂时无法连接服务器，请稍后重试。');
+    message.textContent = '暂时无法连接服务器，请稍后重试。';
     console.error(error);
   }
 }
 
 async function login() {
-  const u = document.getElementById('username').value.trim();
+  const account = document.getElementById('account').value.trim();
   const p = document.getElementById('password').value;
-  if (!u || !p) return showAuthMessage('请填写用户名和密码');
+  if (!account || !p) return showAuthMessage('请填写账户名和密码');
   try {
-    const res = await api('login', 'POST', { username: u, password: p });
+    const res = await api('login', 'POST', { account, password: p });
     if (res.error) {
       showAuthMessage(res.error);
     } else {
-      myUsername = res.username;
       myUserId = res.userId;
-      document.getElementById('current-user').textContent = myUsername;
+      document.getElementById('current-user').textContent = res.displayName;
       document.getElementById('auth-panel').style.display = 'none';
+      document.getElementById('register-panel').hidden = true;
       document.getElementById('chat-panel').style.display = 'flex';
       startChat();
     }
@@ -56,6 +74,20 @@ async function login() {
     showAuthMessage('暂时无法连接服务器，请稍后重试。');
     console.error(error);
   }
+}
+
+function showRegisterPage() {
+  document.getElementById('auth-panel').style.display = 'none';
+  document.getElementById('register-panel').hidden = false;
+  document.getElementById('register-msg').textContent = '';
+  document.getElementById('register-account').focus();
+}
+
+function showLoginPage(message = '', isSuccess = false) {
+  document.getElementById('register-panel').hidden = true;
+  document.getElementById('auth-panel').style.display = '';
+  showAuthMessage(message, isSuccess);
+  document.getElementById('account').focus();
 }
 
 // 登录后启动
@@ -130,13 +162,13 @@ async function showMembers() {
         image.alt = '';
         avatar.appendChild(image);
       } else {
-        avatar.textContent = user.username.charAt(0).toUpperCase();
+        avatar.textContent = user.display_name.charAt(0).toUpperCase();
       }
 
-      const username = document.createElement('span');
-      username.className = 'member-name';
-      username.textContent = user.username;
-      item.append(avatar, username);
+      const displayName = document.createElement('span');
+      displayName.className = 'member-name';
+      displayName.textContent = user.display_name;
+      item.append(avatar, displayName);
       list.appendChild(item);
     });
   } catch (error) {
@@ -172,7 +204,7 @@ async function fetchMessages() {
         res.messages.forEach(msg => {
           if (msg.id <= lastMsgId) return;
           lastMsgId = msg.id;
-          const isMine = msg.username === myUsername;
+          const isMine = Number(msg.user_id) === Number(myUserId);
 
           const div = document.createElement('div');
           div.className = 'message' + (isMine ? ' mine' : '');
@@ -186,7 +218,7 @@ async function fetchMessages() {
             avatarImage.alt = '';
             avatarDiv.appendChild(avatarImage);
           } else {
-            avatarDiv.innerText = msg.username.charAt(0).toUpperCase();
+            avatarDiv.innerText = msg.display_name.charAt(0).toUpperCase();
           }
 
           const bodyDiv = document.createElement('div');
@@ -199,13 +231,13 @@ async function fetchMessages() {
           senderDiv.className = 'sender';
 
           const badgeDiv = document.createElement('span');
-          const isSuperAdmin = msg.username === 'KAMSHION';
+          const isSuperAdmin = msg.display_name === 'KAMSHION';
           badgeDiv.className = `user-badge${isSuperAdmin ? ' super-admin' : ''}`;
           badgeDiv.textContent = isSuperAdmin ? '超管' : 'Lv.1';
 
           const usernameSpan = document.createElement('span');
           usernameSpan.className = 'sender-name';
-          usernameSpan.textContent = msg.username;
+          usernameSpan.textContent = msg.display_name;
           senderDiv.append(badgeDiv, usernameSpan);
 
           const contentDiv = document.createElement('div');
@@ -326,6 +358,7 @@ function logout() {
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
   const authForm = document.getElementById('auth-form');
+  const registerForm = document.getElementById('register-form');
   const messageForm = document.getElementById('message-form');
   const membersDialog = document.getElementById('members-dialog');
 
@@ -335,8 +368,11 @@ document.addEventListener('DOMContentLoaded', () => {
     login();
   });
 
-  document.querySelector('[data-auth-action="register"]').addEventListener('click', () => {
-    showAuthMessage('');
+  document.getElementById('show-register-btn').addEventListener('click', showRegisterPage);
+  document.getElementById('back-to-login-btn').addEventListener('click', () => showLoginPage());
+
+  registerForm.addEventListener('submit', event => {
+    event.preventDefault();
     register();
   });
 

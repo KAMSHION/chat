@@ -46,7 +46,8 @@ textarea:focus-visible {
   width: min(100%, 920px);
 }
 
-#auth-panel {
+#auth-panel,
+#register-panel {
   width: min(100%, 420px);
   margin: 0 auto;
   padding: 40px;
@@ -77,7 +78,8 @@ textarea:focus-visible {
   letter-spacing: .16em;
 }
 
-#auth-panel h1 {
+#auth-panel h1,
+#register-panel h1 {
   margin: 0;
   font-size: 28px;
   letter-spacing: -.04em;
@@ -89,19 +91,22 @@ textarea:focus-visible {
   font-size: 14px;
 }
 
-#auth-form {
+#auth-form,
+#register-form {
   display: flex;
   flex-direction: column;
 }
 
-#auth-form label {
+#auth-form label,
+#register-form label {
   margin: 0 0 8px;
   color: #46516a;
   font-size: 13px;
   font-weight: 600;
 }
 
-#auth-form input {
+#auth-form input,
+#register-form input {
   width: 100%;
   height: 48px;
   margin-bottom: 18px;
@@ -113,13 +118,15 @@ textarea:focus-visible {
   transition: border-color .2s, box-shadow .2s;
 }
 
-#auth-form input:focus {
+#auth-form input:focus,
+#register-form input:focus {
   border-color: #8a9af1;
   box-shadow: 0 0 0 3px rgba(82, 109, 229, .1);
   outline: none;
 }
 
 #auth-form input::placeholder,
+#register-form input::placeholder,
 #msg-input::placeholder {
   color: #a8afbd;
 }
@@ -173,7 +180,16 @@ textarea:focus-visible {
   text-align: center;
 }
 
-#auth-msg.success {
+#register-msg {
+  min-height: 20px;
+  margin: 12px 0 0;
+  color: #d04f5f;
+  font-size: 13px;
+  text-align: center;
+}
+
+#auth-msg.success,
+#register-msg.success {
   color: #27885f;
 }
 
