@@ -144,6 +144,23 @@
         </div>
       </form>
     </dialog>
+
+    <dialog id="unmute-dialog" aria-labelledby="unmute-title">
+      <div class="members-dialog-header">
+        <div>
+          <h2 id="unmute-title">解除禁言</h2>
+          <p id="unmute-description">确认解除该成员的禁言吗？</p>
+        </div>
+        <button id="unmute-dialog-close" type="button" aria-label="关闭">×</button>
+      </div>
+      <div class="username-form">
+        <p id="unmute-msg" role="status" aria-live="polite"></p>
+        <div class="btn-group">
+          <button id="unmute-cancel-btn" type="button" class="secondary-btn">取消</button>
+          <button id="unmute-confirm-btn" type="button" class="primary-btn">确认</button>
+        </div>
+      </div>
+    </dialog>
   </main>
   <script src="app.js"></script>
 </body>

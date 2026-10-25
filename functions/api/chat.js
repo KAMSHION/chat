@@ -109,6 +109,27 @@ export async function onRequest(context) {
       return json({ success: true, userId, displayName: target.display_name, mutedUntil });
     }
 
+    if (action === 'unmuteUser') {
+      const moderator = await db.prepare("SELECT display_name, role FROM users WHERE id = ?").bind(session.user_id).first();
+      if (!moderator || !['super_admin', 'admin'].includes(moderator.role)) return json({ error: '没有解除禁言权限' }, 403);
+      const { user_id } = await request.json();
+      const userId = Number(user_id);
+      if (!Number.isSafeInteger(userId) || userId <= 0) return json({ error: '成员无效' }, 400);
+      const target = await db.prepare("SELECT id, display_name, role FROM users WHERE id = ?").bind(userId).first();
+      if (!target) return json({ error: '成员不存在' }, 404);
+      if (['super_admin', 'admin'].includes(target.role)) return json({ error: '不能解除管理成员的禁言' }, 403);
+      const mute = await db.prepare("SELECT muted_until FROM user_mutes WHERE user_id = ?").bind(userId).first();
+      if (!mute || mute.muted_until <= Date.now()) return json({ error: '该成员当前未被禁言' }, 400);
+      const notificationRole = moderator.role === 'super_admin' ? '超管' : '管理';
+      const notificationText = `用户${target.display_name}的禁言已被${notificationRole}${moderator.display_name}解除`;
+      await db.batch([
+        db.prepare("DELETE FROM user_mutes WHERE user_id = ?").bind(userId),
+        db.prepare("INSERT INTO messages (user_id, display_name, text, created_at) VALUES (0, '[通知]', ?, ?)").bind(notificationText, Date.now()),
+        db.prepare("DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY id DESC LIMIT 50)")
+      ]);
+      return json({ success: true, userId, displayName: target.display_name });
+    }
+
     if (action === 'changeDisplayName') {
       const { display_name } = await request.json();
       const displayName = typeof display_name === 'string' ? display_name.trim() : '';

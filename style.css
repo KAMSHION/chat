@@ -439,6 +439,16 @@ textarea:focus-visible {
   background: #ffeded;
 }
 
+.member-mute-btn.unmute {
+  border-color: #cde8da;
+  color: #27885f;
+  background: #f2fbf6;
+}
+
+.member-mute-btn.unmute:hover {
+  background: #e6f7ed;
+}
+
 .members-message {
   margin: 0;
   padding: 26px 12px;
@@ -519,7 +529,8 @@ textarea:focus-visible {
   opacity: .6;
 }
 
-#mute-dialog {
+#mute-dialog,
+#unmute-dialog {
   width: min(400px, calc(100% - 32px));
 }
 
@@ -539,7 +550,8 @@ textarea:focus-visible {
   opacity: .6;
 }
 
-#mute-dialog .btn-group button:disabled {
+#mute-dialog .btn-group button:disabled,
+#unmute-dialog .btn-group button:disabled {
   cursor: wait;
   opacity: .6;
 }
@@ -1096,7 +1108,8 @@ html[data-theme="night"] .composer-footer {
 
 html[data-theme="night"] #members-dialog,
 html[data-theme="night"] #username-dialog,
-html[data-theme="night"] #mute-dialog {
+html[data-theme="night"] #mute-dialog,
+html[data-theme="night"] #unmute-dialog {
   border-color: #3b4659;
   color: #e5eaf5;
   background: #1b2432;
@@ -1116,7 +1129,8 @@ html[data-theme="night"] .members-dialog-header p {
 
 html[data-theme="night"] #members-dialog #members-close,
 html[data-theme="night"] #username-dialog #username-dialog-close,
-html[data-theme="night"] #mute-dialog #mute-dialog-close {
+html[data-theme="night"] #mute-dialog #mute-dialog-close,
+html[data-theme="night"] #unmute-dialog #unmute-dialog-close {
   color: #c5cede;
   background: #303b4d;
 }
@@ -1137,6 +1151,16 @@ html[data-theme="night"] .member-mute-btn {
 
 html[data-theme="night"] .member-mute-btn:hover {
   background: #4a3038;
+}
+
+html[data-theme="night"] .member-mute-btn.unmute {
+  border-color: #365b4e;
+  color: #8ed4b5;
+  background: #223a34;
+}
+
+html[data-theme="night"] .member-mute-btn.unmute:hover {
+  background: #29483e;
 }
 
 html[data-theme="night"] .member-mute-state {

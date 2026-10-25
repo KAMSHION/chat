@@ -214,8 +214,13 @@ async function showMembers() {
         const muteButton = document.createElement('button');
         muteButton.className = 'member-mute-btn';
         muteButton.type = 'button';
-        muteButton.textContent = '禁言';
-        muteButton.addEventListener('click', () => openMuteDialog(user));
+        const isMuted = user.muted_until > Date.now();
+        muteButton.textContent = isMuted ? '解除' : '禁言';
+        muteButton.classList.toggle('unmute', isMuted);
+        muteButton.addEventListener('click', () => {
+          if (user.muted_until > Date.now()) openUnmuteDialog(user);
+          else openMuteDialog(user);
+        });
         item.appendChild(muteButton);
       }
 
@@ -459,12 +464,60 @@ async function muteMember(event) {
         member.insertBefore(state, member.querySelector('.member-mute-btn'));
       }
       state.textContent = `禁言至 ${new Date(res.mutedUntil).toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+      const button = member.querySelector('.member-mute-btn');
+      if (button) {
+        button.textContent = '解除';
+        button.classList.add('unmute');
+      }
     }
     await fetchMessages();
     window.setTimeout(() => document.getElementById('mute-dialog').close(), 700);
   } catch (error) {
     message.textContent = '禁言失败，请检查网络后重试。';
     console.error('禁言成员失败：', error);
+  } finally {
+    confirmButton.disabled = false;
+  }
+}
+
+function openUnmuteDialog(user) {
+  muteTarget = user;
+  document.getElementById('unmute-title').textContent = `解除用户${user.display_name}的禁言`;
+  document.getElementById('unmute-description').textContent = `确认解除${user.display_name}的禁言吗？`;
+  document.getElementById('unmute-msg').textContent = '';
+  document.getElementById('unmute-dialog').showModal();
+}
+
+async function unmuteMember() {
+  if (!muteTarget) return;
+  const message = document.getElementById('unmute-msg');
+  const confirmButton = document.getElementById('unmute-confirm-btn');
+  confirmButton.disabled = true;
+  message.textContent = '';
+
+  try {
+    const res = await api('unmuteUser', 'POST', { user_id: muteTarget.id });
+    if (res.error) {
+      message.textContent = res.error;
+      return;
+    }
+
+    message.textContent = `${res.displayName}已解除禁言`;
+    message.classList.add('success');
+    const member = document.querySelector(`.member-item[data-user-id="${res.userId}"]`);
+    if (member) {
+      member.querySelector('.member-mute-state')?.remove();
+      const button = member.querySelector('.member-mute-btn');
+      if (button) {
+        button.textContent = '禁言';
+        button.classList.remove('unmute');
+      }
+    }
+    await fetchMessages();
+    window.setTimeout(() => document.getElementById('unmute-dialog').close(), 700);
+  } catch (error) {
+    message.textContent = '解除禁言失败，请检查网络后重试。';
+    console.error('解除禁言失败：', error);
   } finally {
     confirmButton.disabled = false;
   }
@@ -553,6 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const membersDialog = document.getElementById('members-dialog');
   const usernameDialog = document.getElementById('username-dialog');
   const muteDialog = document.getElementById('mute-dialog');
+  const unmuteDialog = document.getElementById('unmute-dialog');
 
   let savedTheme = 'day';
   try {
@@ -599,6 +653,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('mute-dialog-close').addEventListener('click', () => muteDialog.close());
   document.getElementById('mute-cancel-btn').addEventListener('click', () => muteDialog.close());
   document.getElementById('mute-form').addEventListener('submit', muteMember);
+  document.getElementById('unmute-dialog-close').addEventListener('click', () => unmuteDialog.close());
+  document.getElementById('unmute-cancel-btn').addEventListener('click', () => unmuteDialog.close());
+  document.getElementById('unmute-confirm-btn').addEventListener('click', unmuteMember);
 
   if (input) {
     input.addEventListener('input', updateComposer);
