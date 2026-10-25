@@ -179,3 +179,21 @@ function logout() {
   document.cookie = 'session=; Max-Age=0; path=/';
   location.reload();
 }
+
+// === 新增：监听键盘 Enter 发送逻辑 ===
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('msg-input');
+  if (input) {
+    input.addEventListener('keydown', (e) => {
+      // 如果按下的是 Enter 键
+      if (e.key === 'Enter') {
+        // 如果没有按 Shift，则发送消息并阻止默认换行
+        if (!e.shiftKey) {
+          e.preventDefault(); // 阻止默认的回车换行行为
+          sendMessage();
+        }
+        // 如果按了 Shift + Enter，就什么都不做，让它默认换行
+      }
+    });
+  }
+});
