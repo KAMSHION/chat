@@ -133,8 +133,10 @@
         <button id="mute-dialog-close" type="button" aria-label="关闭">×</button>
       </div>
       <form id="mute-form" class="username-form">
-        <label id="mute-duration-label" for="mute-duration">禁言时长（min）</label>
+        <label id="mute-duration-label" for="mute-duration">禁言用户，时长（min）</label>
         <input id="mute-duration" type="number" min="1" step="1" placeholder="输入分钟数（min）" required>
+        <label for="mute-reason">理由</label>
+        <textarea id="mute-reason" maxlength="200" rows="3" placeholder="请填写禁言理由" required></textarea>
         <p id="mute-msg" role="status" aria-live="polite"></p>
         <div class="btn-group">
           <button id="mute-cancel-btn" type="button" class="secondary-btn">取消</button>

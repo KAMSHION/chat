@@ -261,6 +261,14 @@ async function fetchMessages() {
           div.dataset.messageId = msg.id;
           div.dataset.userId = msg.user_id;
 
+          if (Number(msg.user_id) === 0) {
+            div.className = 'system-notification';
+            div.textContent = `[通知] ${msg.text}`;
+            msgContainer.appendChild(div);
+            document.getElementById('empty-state').hidden = true;
+            return;
+          }
+
           const avatarDiv = document.createElement('div');
           avatarDiv.className = 'avatar';
           if (userAvatars[msg.user_id]) {
@@ -400,8 +408,9 @@ async function changeDisplayName(event) {
 function openMuteDialog(user) {
   muteTarget = user;
   document.getElementById('mute-title').textContent = `将用户${user.display_name}禁言`;
-  document.getElementById('mute-duration-label').textContent = `禁言用户${user.display_name}（min）`;
+  document.getElementById('mute-duration-label').textContent = `禁言用户${user.display_name}，时长（min）`;
   document.getElementById('mute-duration').value = '';
+  document.getElementById('mute-reason').value = '';
   document.getElementById('mute-msg').textContent = '';
   document.getElementById('mute-dialog').showModal();
   document.getElementById('mute-duration').focus();
@@ -414,6 +423,7 @@ async function muteMember(event) {
   const message = document.getElementById('mute-msg');
   const confirmButton = document.getElementById('mute-confirm-btn');
   const durationMinutes = Number(durationInput.value);
+  const reason = document.getElementById('mute-reason').value.trim();
   message.textContent = '';
   message.classList.remove('success');
 
@@ -421,12 +431,17 @@ async function muteMember(event) {
     message.textContent = '请输入大于0的整数分钟';
     return;
   }
+  if (!reason) {
+    message.textContent = '请填写禁言理由';
+    return;
+  }
 
   confirmButton.disabled = true;
   try {
     const res = await api('muteUser', 'POST', {
       user_id: muteTarget.id,
-      duration_minutes: durationMinutes
+      duration_minutes: durationMinutes,
+      reason
     });
     if (res.error) {
       message.textContent = res.error;
@@ -445,6 +460,7 @@ async function muteMember(event) {
       }
       state.textContent = `禁言至 ${new Date(res.mutedUntil).toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
     }
+    await fetchMessages();
     window.setTimeout(() => document.getElementById('mute-dialog').close(), 700);
   } catch (error) {
     message.textContent = '禁言失败，请检查网络后重试。';

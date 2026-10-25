@@ -473,9 +473,30 @@ textarea:focus-visible {
   background: #fbfcfe;
 }
 
+.username-form textarea {
+  width: 100%;
+  min-height: 78px;
+  padding: 10px 12px;
+  border: 1px solid #e1e6ef;
+  border-radius: 10px;
+  color: #192338;
+  background: #fbfcfe;
+  resize: vertical;
+}
+
 .username-form input:focus {
   border-color: #8a9af1;
   outline: 3px solid rgba(82, 109, 229, .12);
+}
+
+.username-form textarea:focus {
+  border-color: #8a9af1;
+  outline: 3px solid rgba(82, 109, 229, .12);
+}
+
+.username-form input::placeholder,
+.username-form textarea::placeholder {
+  color: #a8afbd;
 }
 
 #username-msg {
@@ -535,6 +556,20 @@ textarea:focus-visible {
     radial-gradient(circle at 1px 1px, rgba(111, 127, 160, .07) 1px, transparent 0) 0 0 / 22px 22px,
     #f8f9fc;
   scroll-behavior: smooth;
+}
+
+.system-notification {
+  max-width: min(90%, 680px);
+  align-self: center;
+  padding: 8px 13px;
+  border: 1px solid #e6eaf2;
+  border-radius: 10px;
+  color: #758198;
+  background: rgba(255, 255, 255, .78);
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .empty-state {
@@ -934,9 +969,16 @@ html[data-theme="night"] .username-form input {
   background: #151d29;
 }
 
+html[data-theme="night"] .username-form textarea {
+  border-color: #3b4659;
+  color: #e7ecf5;
+  background: #151d29;
+}
+
 html[data-theme="night"] #auth-form input::placeholder,
 html[data-theme="night"] #register-form input::placeholder,
-html[data-theme="night"] .username-form input::placeholder {
+html[data-theme="night"] .username-form input::placeholder,
+html[data-theme="night"] .username-form textarea::placeholder {
   color: #7f8ba0;
 }
 
@@ -976,6 +1018,12 @@ html[data-theme="night"] #messages {
   background:
     radial-gradient(circle at 1px 1px, rgba(167, 183, 210, .07) 1px, transparent 0) 0 0 / 22px 22px,
     #151e2b;
+}
+
+html[data-theme="night"] .system-notification {
+  border-color: #354155;
+  color: #aeb9ca;
+  background: rgba(38, 50, 68, .82);
 }
 
 html[data-theme="night"] .empty-state {

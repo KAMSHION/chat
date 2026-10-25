@@ -81,22 +81,31 @@ export async function onRequest(context) {
     }
 
     if (action === 'muteUser') {
-      const moderator = await db.prepare("SELECT role FROM users WHERE id = ?").bind(session.user_id).first();
+      const moderator = await db.prepare("SELECT display_name, role FROM users WHERE id = ?").bind(session.user_id).first();
       if (!moderator || !['super_admin', 'admin'].includes(moderator.role)) return json({ error: '没有禁言权限' }, 403);
-      const { user_id, duration_minutes } = await request.json();
+      const { user_id, duration_minutes, reason } = await request.json();
       const userId = Number(user_id);
       const durationMinutes = Number(duration_minutes);
+      const muteReason = typeof reason === 'string' ? reason.trim() : '';
       if (!Number.isSafeInteger(userId) || userId <= 0) return json({ error: '成员无效' }, 400);
       if (!Number.isSafeInteger(durationMinutes) || durationMinutes <= 0) return json({ error: '禁言时长必须是大于0的整数分钟' }, 400);
+      if (!muteReason) return json({ error: '禁言理由不能为空' }, 400);
+      if (muteReason.length > 200) return json({ error: '禁言理由不能超过200个字符' }, 400);
       const mutedUntil = Date.now() + durationMinutes * 60_000;
       if (!Number.isSafeInteger(mutedUntil)) return json({ error: '禁言时长过长' }, 400);
       const target = await db.prepare("SELECT id, display_name, role FROM users WHERE id = ?").bind(userId).first();
       if (!target) return json({ error: '成员不存在' }, 404);
       if (['super_admin', 'admin'].includes(target.role)) return json({ error: '不能禁言超管或管理' }, 403);
-      await db.prepare(`
-        INSERT INTO user_mutes (user_id, muted_until, muted_by) VALUES (?, ?, ?)
-        ON CONFLICT(user_id) DO UPDATE SET muted_until = excluded.muted_until, muted_by = excluded.muted_by
-      `).bind(userId, mutedUntil, session.user_id).run();
+      const notificationRole = moderator.role === 'super_admin' ? '超管' : '管理';
+      const notificationText = `用户${target.display_name}已被${notificationRole}${moderator.display_name}禁言${durationMinutes}min，理由：${muteReason}`;
+      await db.batch([
+        db.prepare(`
+          INSERT INTO user_mutes (user_id, muted_until, muted_by) VALUES (?, ?, ?)
+          ON CONFLICT(user_id) DO UPDATE SET muted_until = excluded.muted_until, muted_by = excluded.muted_by
+        `).bind(userId, mutedUntil, session.user_id),
+        db.prepare("INSERT INTO messages (user_id, display_name, text, created_at) VALUES (0, '[通知]', ?, ?)").bind(notificationText, Date.now()),
+        db.prepare("DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY id DESC LIMIT 50)")
+      ]);
       return json({ success: true, userId, displayName: target.display_name, mutedUntil });
     }
 
