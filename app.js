@@ -161,7 +161,11 @@ async function showMembers() {
     const res = await loadUsers();
     if (res.error) throw new Error(res.error);
 
-    const users = res.users || [];
+    const roleOrder = { super_admin: 0, admin: 1 };
+    const users = (res.users || []).sort((first, second) =>
+      (roleOrder[first.role] ?? 2) - (roleOrder[second.role] ?? 2) ||
+      first.display_name.localeCompare(second.display_name, 'zh-CN')
+    );
     count.textContent = `共 ${users.length} 位成员`;
     if (users.length === 0) {
       const empty = document.createElement('p');
@@ -206,7 +210,7 @@ async function showMembers() {
         item.appendChild(muteState);
       }
 
-      if (['super_admin', 'admin'].includes(myRole)) {
+      if (['super_admin', 'admin'].includes(myRole) && !['super_admin', 'admin'].includes(user.role)) {
         const muteButton = document.createElement('button');
         muteButton.className = 'member-mute-btn';
         muteButton.type = 'button';

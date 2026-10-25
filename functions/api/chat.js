@@ -71,6 +71,11 @@ export async function onRequest(context) {
         SELECT users.id, users.display_name, users.avatar_base64, users.role,
           (SELECT muted_until FROM user_mutes WHERE user_id = users.id) AS muted_until
         FROM users
+        ORDER BY CASE users.role
+          WHEN 'super_admin' THEN 0
+          WHEN 'admin' THEN 1
+          ELSE 2
+        END, users.display_name COLLATE NOCASE
       `).all();
       return json({ users: results });
     }
@@ -85,8 +90,9 @@ export async function onRequest(context) {
       if (!Number.isSafeInteger(durationMinutes) || durationMinutes <= 0) return json({ error: '禁言时长必须是大于0的整数分钟' }, 400);
       const mutedUntil = Date.now() + durationMinutes * 60_000;
       if (!Number.isSafeInteger(mutedUntil)) return json({ error: '禁言时长过长' }, 400);
-      const target = await db.prepare("SELECT id, display_name FROM users WHERE id = ?").bind(userId).first();
+      const target = await db.prepare("SELECT id, display_name, role FROM users WHERE id = ?").bind(userId).first();
       if (!target) return json({ error: '成员不存在' }, 404);
+      if (['super_admin', 'admin'].includes(target.role)) return json({ error: '不能禁言超管或管理' }, 403);
       await db.prepare(`
         INSERT INTO user_mutes (user_id, muted_until, muted_by) VALUES (?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET muted_until = excluded.muted_until, muted_by = excluded.muted_by
