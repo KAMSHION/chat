@@ -1,5 +1,7 @@
 let lastMsgId = 0;
 let pollingTimer = null;
+let messagesFetchInProgress = false;
+let messagesFetchQueued = false;
 let myUsername = '';
 let myUserId = 0;
 let userAvatars = {}; // 存放所有用户的头像字典 {id: base64}
@@ -95,61 +97,91 @@ async function loadUsers() {
 
 // 拉取消息
 async function fetchMessages() {
-  const res = await api(`getMessages&after=${lastMsgId}`);
-  if (res.error) return console.error(res.error);
-  
-  if (res.messages && res.messages.length > 0) {
-    const msgContainer = document.getElementById('messages');
-    
-    res.messages.forEach(msg => {
-      if (msg.id > lastMsgId) lastMsgId = msg.id;
-      const isMine = msg.username === myUsername;
-      
-      const div = document.createElement('div');
-      div.className = 'message' + (isMine ? ' mine' : '');
-      
-      // 头像部分
-      const avatarDiv = document.createElement('div');
-      avatarDiv.className = 'avatar';
-      if (userAvatars[msg.user_id]) {
-        const avatarImage = document.createElement('img');
-        avatarImage.src = userAvatars[msg.user_id];
-        avatarImage.alt = '';
-        avatarDiv.appendChild(avatarImage);
-      } else {
-        avatarDiv.innerText = msg.username.charAt(0).toUpperCase();
+  if (messagesFetchInProgress) {
+    messagesFetchQueued = true;
+    return;
+  }
+
+  messagesFetchInProgress = true;
+  try {
+    do {
+      messagesFetchQueued = false;
+      const res = await api(`getMessages&after=${lastMsgId}`);
+      if (res.error) {
+        console.error(res.error);
+        break;
       }
 
-      // 气泡部分
-      const bubbleDiv = document.createElement('div');
-      bubbleDiv.className = 'bubble';
-      
-      const senderDiv = document.createElement('div');
-      senderDiv.className = 'sender';
-      senderDiv.innerText = msg.username;
-      
-      const contentDiv = document.createElement('div');
-      contentDiv.className = 'content';
-      // 安全渲染：纯文本显示，防止 XSS
-      contentDiv.textContent = msg.text; 
+      if (res.messages && res.messages.length > 0) {
+        const msgContainer = document.getElementById('messages');
 
-      const timeDiv = document.createElement('div');
-      timeDiv.className = 'message-time';
-      timeDiv.textContent = new Date(Number(msg.created_at)).toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      
-      bubbleDiv.appendChild(senderDiv);
-      bubbleDiv.appendChild(contentDiv);
-      bubbleDiv.appendChild(timeDiv);
-      div.appendChild(avatarDiv);
-      div.appendChild(bubbleDiv);
-      
-      msgContainer.appendChild(div);
-    });
-    document.getElementById('empty-state').hidden = true;
-    msgContainer.scrollTop = msgContainer.scrollHeight;
+        res.messages.forEach(msg => {
+          if (msg.id <= lastMsgId) return;
+          lastMsgId = msg.id;
+          const isMine = msg.username === myUsername;
+
+          const div = document.createElement('div');
+          div.className = 'message' + (isMine ? ' mine' : '');
+          div.dataset.messageId = msg.id;
+
+          const avatarDiv = document.createElement('div');
+          avatarDiv.className = 'avatar';
+          if (userAvatars[msg.user_id]) {
+            const avatarImage = document.createElement('img');
+            avatarImage.src = userAvatars[msg.user_id];
+            avatarImage.alt = '';
+            avatarDiv.appendChild(avatarImage);
+          } else {
+            avatarDiv.innerText = msg.username.charAt(0).toUpperCase();
+          }
+
+          const bodyDiv = document.createElement('div');
+          bodyDiv.className = 'message-body';
+
+          const bubbleDiv = document.createElement('div');
+          bubbleDiv.className = 'bubble';
+
+          const senderDiv = document.createElement('div');
+          senderDiv.className = 'sender';
+
+          const badgeDiv = document.createElement('span');
+          const isSuperAdmin = msg.username === 'KAMSHION';
+          badgeDiv.className = `user-badge${isSuperAdmin ? ' super-admin' : ''}`;
+          badgeDiv.textContent = isSuperAdmin ? '超管' : 'Lv.1';
+
+          const usernameSpan = document.createElement('span');
+          usernameSpan.className = 'sender-name';
+          usernameSpan.textContent = msg.username;
+          senderDiv.append(badgeDiv, usernameSpan);
+
+          const contentDiv = document.createElement('div');
+          contentDiv.className = 'content';
+          contentDiv.textContent = msg.text;
+
+          const timeDiv = document.createElement('div');
+          timeDiv.className = 'message-time';
+          timeDiv.textContent = new Date(Number(msg.created_at)).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          bubbleDiv.appendChild(contentDiv);
+          bodyDiv.appendChild(senderDiv);
+          bodyDiv.appendChild(bubbleDiv);
+          bodyDiv.appendChild(timeDiv);
+          div.appendChild(avatarDiv);
+          div.appendChild(bodyDiv);
+
+          msgContainer.appendChild(div);
+        });
+        document.getElementById('empty-state').hidden = true;
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+      }
+    } while (messagesFetchQueued);
+  } catch (error) {
+    console.error('获取消息失败：', error);
+  } finally {
+    messagesFetchInProgress = false;
   }
 }
 
