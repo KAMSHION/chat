@@ -14,28 +14,45 @@ async function api(action, method = 'GET', body = null) {
   return await res.json();
 }
 
+function showAuthMessage(message, isSuccess = false) {
+  const msg = document.getElementById('auth-msg');
+  msg.textContent = message;
+  msg.classList.toggle('success', isSuccess);
+}
+
 async function register() {
   const u = document.getElementById('username').value.trim();
   const p = document.getElementById('password').value;
-  if (!u || !p) return alert('请填写用户名和密码');
-  const res = await api('register', 'POST', { username: u, password: p });
-  if (res.error) document.getElementById('auth-msg').innerText = res.error;
-  else alert('注册成功，请登录');
+  if (!u || !p) return showAuthMessage('请填写用户名和密码');
+  try {
+    const res = await api('register', 'POST', { username: u, password: p });
+    if (res.error) showAuthMessage(res.error);
+    else showAuthMessage('注册成功，请登录。', true);
+  } catch (error) {
+    showAuthMessage('暂时无法连接服务器，请稍后重试。');
+    console.error(error);
+  }
 }
 
 async function login() {
   const u = document.getElementById('username').value.trim();
   const p = document.getElementById('password').value;
-  if (!u || !p) return alert('请填写用户名和密码');
-  const res = await api('login', 'POST', { username: u, password: p });
-  if (res.error) {
-    document.getElementById('auth-msg').innerText = res.error;
-  } else {
-    myUsername = res.username;
-    myUserId = res.userId;
-    document.getElementById('auth-panel').style.display = 'none';
-    document.getElementById('chat-panel').style.display = 'flex';
-    startChat();
+  if (!u || !p) return showAuthMessage('请填写用户名和密码');
+  try {
+    const res = await api('login', 'POST', { username: u, password: p });
+    if (res.error) {
+      showAuthMessage(res.error);
+    } else {
+      myUsername = res.username;
+      myUserId = res.userId;
+      document.getElementById('current-user').textContent = myUsername;
+      document.getElementById('auth-panel').style.display = 'none';
+      document.getElementById('chat-panel').style.display = 'flex';
+      startChat();
+    }
+  } catch (error) {
+    showAuthMessage('暂时无法连接服务器，请稍后重试。');
+    console.error(error);
   }
 }
 
@@ -43,6 +60,7 @@ async function login() {
 async function startChat() {
   await loadUsers(); // 先拉取所有人的头像
   fetchMessages();
+  heartbeat();
   setInterval(heartbeat, 60000);
   pollingTimer = setInterval(() => {
     if (document.visibilityState === 'visible') fetchMessages();
@@ -51,7 +69,18 @@ async function startChat() {
 
 // 心跳包
 async function heartbeat() {
-  await api('heartbeat', 'POST');
+  const status = document.getElementById('connection-status');
+  const dot = document.querySelector('.status-dot');
+  try {
+    const res = await api('heartbeat', 'POST');
+    if (res.error) throw new Error(res.error);
+    status.textContent = '在线';
+    dot.classList.remove('offline');
+  } catch (error) {
+    status.textContent = '连接异常';
+    dot.classList.add('offline');
+    console.error(error);
+  }
 }
 
 // 加载用户头像字典
@@ -83,7 +112,10 @@ async function fetchMessages() {
       const avatarDiv = document.createElement('div');
       avatarDiv.className = 'avatar';
       if (userAvatars[msg.user_id]) {
-        avatarDiv.innerHTML = `<img src="${userAvatars[msg.user_id]}">`;
+        const avatarImage = document.createElement('img');
+        avatarImage.src = userAvatars[msg.user_id];
+        avatarImage.alt = '';
+        avatarDiv.appendChild(avatarImage);
       } else {
         avatarDiv.innerText = msg.username.charAt(0).toUpperCase();
       }
@@ -100,14 +132,23 @@ async function fetchMessages() {
       contentDiv.className = 'content';
       // 安全渲染：纯文本显示，防止 XSS
       contentDiv.textContent = msg.text; 
+
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'message-time';
+      timeDiv.textContent = new Date(Number(msg.created_at)).toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
       
       bubbleDiv.appendChild(senderDiv);
       bubbleDiv.appendChild(contentDiv);
+      bubbleDiv.appendChild(timeDiv);
       div.appendChild(avatarDiv);
       div.appendChild(bubbleDiv);
       
       msgContainer.appendChild(div);
     });
+    document.getElementById('empty-state').hidden = true;
     msgContainer.scrollTop = msgContainer.scrollHeight;
   }
 }
@@ -116,10 +157,23 @@ async function sendMessage() {
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
   if (!text) return;
-  input.value = '';
-  const res = await api('sendMessage', 'POST', { text });
-  if (res.error) alert(res.error);
-  else fetchMessages();
+  const sendButton = document.getElementById('send-btn');
+  sendButton.disabled = true;
+  try {
+    const res = await api('sendMessage', 'POST', { text });
+    if (res.error) {
+      alert(res.error);
+      return;
+    }
+    input.value = '';
+    updateComposer();
+    await fetchMessages();
+  } catch (error) {
+    alert('发送失败，请检查网络后重试。');
+    console.error(error);
+  } finally {
+    updateComposer();
+  }
 }
 
 // === 头像压缩与上传逻辑 ===
@@ -135,10 +189,12 @@ async function uploadAvatar(input) {
     } else {
       alert('头像更新成功！');
       userAvatars[myUserId] = base64;
-      // 重新刷新消息以显示新头像
-      document.getElementById('messages').innerHTML = '';
-      lastMsgId = 0;
-      fetchMessages();
+      document.querySelectorAll('.message.mine .avatar').forEach(avatar => {
+        const image = document.createElement('img');
+        image.src = base64;
+        image.alt = '';
+        avatar.replaceChildren(image);
+      });
     }
   } catch (e) {
     alert('图片处理失败');
@@ -183,7 +239,27 @@ function logout() {
 // === 新增：监听键盘 Enter 发送逻辑 ===
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
+  const authForm = document.getElementById('auth-form');
+  const messageForm = document.getElementById('message-form');
+
+  authForm.addEventListener('submit', event => {
+    event.preventDefault();
+    showAuthMessage('');
+    login();
+  });
+
+  document.querySelector('[data-auth-action="register"]').addEventListener('click', () => {
+    showAuthMessage('');
+    register();
+  });
+
+  messageForm.addEventListener('submit', event => {
+    event.preventDefault();
+    sendMessage();
+  });
+
   if (input) {
+    input.addEventListener('input', updateComposer);
     input.addEventListener('keydown', (e) => {
       // 如果按下的是 Enter 键
       if (e.key === 'Enter') {
@@ -196,4 +272,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  updateComposer();
 });
+
+function updateComposer() {
+  const input = document.getElementById('msg-input');
+  const counter = document.getElementById('char-count');
+  const sendButton = document.getElementById('send-btn');
+  if (!input || !counter || !sendButton) return;
+  counter.textContent = `${input.value.length} / 300`;
+  sendButton.disabled = !input.value.trim();
+}
