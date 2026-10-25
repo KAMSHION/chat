@@ -67,17 +67,37 @@ export async function onRequest(context) {
 
     // 获取所有用户（用于渲染头像）
     if (action === 'getUsers') {
+      const onlineSince = Date.now() - 90000;
       const { results } = await db.prepare(`
         SELECT users.id, users.display_name, users.avatar_base64, users.role,
-          (SELECT muted_until FROM user_mutes WHERE user_id = users.id) AS muted_until
+          (SELECT muted_until FROM user_mutes WHERE user_id = users.id) AS muted_until,
+          EXISTS(
+            SELECT 1 FROM sessions
+            WHERE sessions.user_id = users.id AND sessions.last_seen > ?
+          ) AS is_online
         FROM users
         ORDER BY CASE users.role
           WHEN 'super_admin' THEN 0
           WHEN 'admin' THEN 1
           ELSE 2
         END, users.display_name COLLATE NOCASE
-      `).all();
-      return json({ users: results });
+      `).bind(onlineSince).all();
+      const online = await db.prepare("SELECT COUNT(DISTINCT user_id) AS count FROM sessions WHERE last_seen > ?").bind(onlineSince).first();
+      return json({ users: results, onlineCount: online.count });
+    }
+
+    if (action === 'getPresence') {
+      const onlineSince = Date.now() - 90000;
+      const { results } = await db.prepare(`
+        SELECT users.id,
+          EXISTS(
+            SELECT 1 FROM sessions
+            WHERE sessions.user_id = users.id AND sessions.last_seen > ?
+          ) AS is_online
+        FROM users
+      `).bind(onlineSince).all();
+      const online = await db.prepare("SELECT COUNT(DISTINCT user_id) AS count FROM sessions WHERE last_seen > ?").bind(onlineSince).first();
+      return json({ users: results, onlineCount: online.count });
     }
 
     if (action === 'muteUser') {
@@ -96,8 +116,15 @@ export async function onRequest(context) {
       const target = await db.prepare("SELECT id, display_name, role FROM users WHERE id = ?").bind(userId).first();
       if (!target) return json({ error: '成员不存在' }, 404);
       if (['super_admin', 'admin'].includes(target.role)) return json({ error: '不能禁言超管或管理' }, 403);
-      const notificationRole = moderator.role === 'super_admin' ? '超管' : '管理';
-      const notificationText = `用户${target.display_name}已被${notificationRole}${moderator.display_name}禁言${durationMinutes}min，理由：${muteReason}`;
+      const notificationText = JSON.stringify({
+        type: 'moderation',
+        action: 'mute',
+        targetName: target.display_name,
+        actorName: moderator.display_name,
+        actorRole: moderator.role,
+        durationMinutes,
+        reason: muteReason
+      });
       await db.batch([
         db.prepare(`
           INSERT INTO user_mutes (user_id, muted_until, muted_by) VALUES (?, ?, ?)
@@ -120,8 +147,13 @@ export async function onRequest(context) {
       if (['super_admin', 'admin'].includes(target.role)) return json({ error: '不能解除管理成员的禁言' }, 403);
       const mute = await db.prepare("SELECT muted_until FROM user_mutes WHERE user_id = ?").bind(userId).first();
       if (!mute || mute.muted_until <= Date.now()) return json({ error: '该成员当前未被禁言' }, 400);
-      const notificationRole = moderator.role === 'super_admin' ? '超管' : '管理';
-      const notificationText = `用户${target.display_name}的禁言已被${notificationRole}${moderator.display_name}解除`;
+      const notificationText = JSON.stringify({
+        type: 'moderation',
+        action: 'unmute',
+        targetName: target.display_name,
+        actorName: moderator.display_name,
+        actorRole: moderator.role
+      });
       await db.batch([
         db.prepare("DELETE FROM user_mutes WHERE user_id = ?").bind(userId),
         db.prepare("INSERT INTO messages (user_id, display_name, text, created_at) VALUES (0, '[通知]', ?, ?)").bind(notificationText, Date.now()),
@@ -145,7 +177,7 @@ export async function onRequest(context) {
     // 更新头像
     if (action === 'updateAvatar') {
       const { avatar_base64 } = await request.json();
-      if (!avatar_base64 || avatar_base64.length > 50000) return json({ error: '头像过大' }, 400); // 限制最大约 37KB
+      if (!avatar_base64 || avatar_base64.length > 140000) return json({ error: '头像必须压缩到100KB以内' }, 400);
       await db.prepare("UPDATE users SET avatar_base64 = ? WHERE id = ?").bind(avatar_base64, session.user_id).run();
       return json({ success: true });
     }

@@ -254,6 +254,11 @@ textarea:focus-visible {
   font-weight: 400;
 }
 
+.online-count {
+  margin-left: 5px;
+  color: #68758b;
+}
+
 .status-dot {
   width: 7px;
   height: 7px;
@@ -405,6 +410,40 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   gap: 7px;
+}
+
+.member-profile {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.member-online-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #33976e;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.member-online-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #44bd8a;
+  box-shadow: 0 0 0 2px rgba(68, 189, 138, .12);
+}
+
+.member-online-state.offline {
+  color: #929bad;
+}
+
+.member-online-state.offline .member-online-dot {
+  background: #a8afbd;
+  box-shadow: 0 0 0 2px rgba(168, 175, 189, .12);
 }
 
 .user-badge.administrator {
@@ -582,6 +621,51 @@ textarea:focus-visible {
   line-height: 1.55;
   text-align: center;
   overflow-wrap: anywhere;
+}
+
+.notification-marker {
+  margin-right: 5px;
+  color: #68758b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.notification-user {
+  color: #344b8e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.notification-actor {
+  color: #4b5fb0;
+}
+
+.notification-operation {
+  display: inline-block;
+  margin: 0 3px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  color: #a3444d;
+  background: #fde9e9;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.notification-operation.released {
+  color: #27885f;
+  background: #e3f5eb;
+}
+
+.notification-duration {
+  color: #a3444d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.notification-reason {
+  color: #66738b;
+  font-weight: 600;
 }
 
 .empty-state {
@@ -967,6 +1051,10 @@ html[data-theme="night"] .chat-heading p {
   color: #9ca8bb;
 }
 
+html[data-theme="night"] .online-count {
+  color: #aeb9ca;
+}
+
 html[data-theme="night"] #auth-form label,
 html[data-theme="night"] #register-form label,
 html[data-theme="night"] .username-form label {
@@ -1036,6 +1124,36 @@ html[data-theme="night"] .system-notification {
   border-color: #354155;
   color: #aeb9ca;
   background: rgba(38, 50, 68, .82);
+}
+
+html[data-theme="night"] .notification-marker {
+  color: #aeb9ca;
+}
+
+html[data-theme="night"] .notification-user {
+  color: #c1cdff;
+}
+
+html[data-theme="night"] .notification-actor {
+  color: #c9d1ff;
+}
+
+html[data-theme="night"] .notification-operation {
+  color: #f0a8ae;
+  background: #492f38;
+}
+
+html[data-theme="night"] .notification-operation.released {
+  color: #8ed4b5;
+  background: #26483e;
+}
+
+html[data-theme="night"] .notification-duration {
+  color: #f0a8ae;
+}
+
+html[data-theme="night"] .notification-reason {
+  color: #bac5d6;
 }
 
 html[data-theme="night"] .empty-state {
@@ -1141,6 +1259,14 @@ html[data-theme="night"] .member-item:hover {
 
 html[data-theme="night"] .member-name {
   color: #d7deea;
+}
+
+html[data-theme="night"] .member-online-state {
+  color: #8ed4b5;
+}
+
+html[data-theme="night"] .member-online-state.offline {
+  color: #929db0;
 }
 
 html[data-theme="night"] .member-mute-btn {

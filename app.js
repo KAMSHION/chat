@@ -2,6 +2,7 @@ let lastMsgId = 0;
 let pollingTimer = null;
 let messagesFetchInProgress = false;
 let messagesFetchQueued = false;
+let isSendingMessage = false;
 let myUserId = 0;
 let myRole = 'user';
 let muteTarget = null;
@@ -111,12 +112,79 @@ function roleLabel(role) {
   return 'Lv.1';
 }
 
+function createRoleBadge(role) {
+  const badge = document.createElement('span');
+  badge.className = `user-badge${role === 'super_admin' ? ' super-admin' : role === 'admin' ? ' administrator' : ''}`;
+  badge.textContent = roleLabel(role);
+  return badge;
+}
+
+function renderSystemNotification(container, message) {
+  let notification;
+  try {
+    notification = JSON.parse(message.text);
+  } catch {
+    notification = null;
+  }
+
+  const row = document.createElement('div');
+  row.className = 'system-notification';
+  const marker = document.createElement('span');
+  marker.className = 'notification-marker';
+  marker.textContent = '[通知]';
+  row.appendChild(marker);
+
+  if (!notification || notification.type !== 'moderation' || !['mute', 'unmute'].includes(notification.action)) {
+    row.append(document.createTextNode(` ${message.text}`));
+    container.appendChild(row);
+    return;
+  }
+
+  row.append(document.createTextNode(' 用户'));
+  const targetName = document.createElement('strong');
+  targetName.className = 'notification-user';
+  targetName.textContent = notification.targetName;
+  row.append(targetName, document.createTextNode(' '));
+
+  if (notification.action === 'mute') {
+    row.append(document.createTextNode('已被 '));
+  } else {
+    row.append(document.createTextNode('的禁言已被 '));
+  }
+  row.appendChild(createRoleBadge(notification.actorRole));
+
+  const actorName = document.createElement('strong');
+  actorName.className = 'notification-user notification-actor';
+  actorName.textContent = notification.actorName;
+  row.append(actorName, document.createTextNode(' '));
+
+  const operation = document.createElement('span');
+  operation.className = `notification-operation${notification.action === 'unmute' ? ' released' : ''}`;
+  operation.textContent = notification.action === 'mute' ? '禁言' : '解除禁言';
+  row.appendChild(operation);
+
+  if (notification.action === 'mute') {
+    const duration = document.createElement('strong');
+    duration.className = 'notification-duration';
+    duration.textContent = ` ${notification.durationMinutes}min`;
+    row.append(duration, document.createTextNode('，理由：'));
+    const reason = document.createElement('span');
+    reason.className = 'notification-reason';
+    reason.textContent = notification.reason;
+    row.appendChild(reason);
+  }
+
+  container.appendChild(row);
+}
+
 // 登录后启动
 async function startChat() {
-  await loadUsers(); // 先拉取所有人的头像
+  await Promise.all([refreshPresence(), refreshAvatars()]);
   fetchMessages();
   heartbeat();
   setInterval(heartbeat, 60000);
+  setInterval(refreshPresence, 15000);
+  setInterval(refreshAvatars, 30000);
   pollingTimer = setInterval(() => {
     if (document.visibilityState === 'visible') fetchMessages();
   }, 3000);
@@ -141,12 +209,59 @@ async function heartbeat() {
 // 加载用户头像字典
 async function loadUsers() {
   const res = await api('getUsers');
+  if (res.error) throw new Error(res.error);
   if (res.users) {
-    res.users.forEach(u => {
-      if (u.avatar_base64) userAvatars[u.id] = u.avatar_base64;
+    res.users.forEach(user => {
+      if (user.avatar_base64) userAvatars[user.id] = user.avatar_base64;
+      else delete userAvatars[user.id];
+      updateUserAvatar(user.id, user.avatar_base64, user.display_name);
     });
   }
   return res;
+}
+
+async function refreshPresence() {
+  try {
+    const res = await api('getPresence');
+    if (res.error) throw new Error(res.error);
+    document.getElementById('online-count').textContent = res.onlineCount ?? 0;
+    const usersById = new Map(res.users.map(user => [String(user.id), user]));
+    document.querySelectorAll('.member-item').forEach(item => {
+      const user = usersById.get(item.dataset.userId);
+      const status = item.querySelector('.member-online-state');
+      if (!user || !status) return;
+      const isOnline = Boolean(user.is_online);
+      status.classList.toggle('offline', !isOnline);
+      status.lastChild.textContent = isOnline ? '在线' : '离线';
+    });
+  } catch (error) {
+    console.error('刷新在线状态失败：', error);
+  }
+}
+
+async function refreshAvatars() {
+  try {
+    await loadUsers();
+  } catch (error) {
+    console.error('刷新用户头像失败：', error);
+  }
+}
+
+function updateUserAvatar(userId, avatarBase64, displayName) {
+  const selector = `[data-user-id="${userId}"]`;
+  document.querySelectorAll(`.message${selector} .avatar, .member-item${selector} .member-avatar`).forEach(avatar => {
+    if (avatarBase64) {
+      let image = avatar.querySelector('img');
+      if (!image) {
+        image = document.createElement('img');
+        image.alt = '';
+        avatar.replaceChildren(image);
+      }
+      if (image.src !== avatarBase64) image.src = avatarBase64;
+    } else if (avatar.querySelector('img') || avatar.textContent !== displayName.charAt(0).toUpperCase()) {
+      avatar.textContent = displayName.charAt(0).toUpperCase();
+    }
+  });
 }
 
 async function showMembers() {
@@ -201,7 +316,17 @@ async function showMembers() {
       badge.className = `user-badge${user.role === 'super_admin' ? ' super-admin' : user.role === 'admin' ? ' administrator' : ''}`;
       badge.textContent = roleLabel(user.role);
       identity.append(displayName, badge);
-      item.append(avatar, identity);
+
+      const onlineState = document.createElement('span');
+      onlineState.className = `member-online-state${user.is_online ? '' : ' offline'}`;
+      const stateDot = document.createElement('span');
+      stateDot.className = 'member-online-dot';
+      onlineState.append(stateDot, document.createTextNode(user.is_online ? '在线' : '离线'));
+
+      const profile = document.createElement('div');
+      profile.className = 'member-profile';
+      profile.append(identity, onlineState);
+      item.append(avatar, profile);
 
       if (user.muted_until > Date.now()) {
         const muteState = document.createElement('span');
@@ -267,9 +392,7 @@ async function fetchMessages() {
           div.dataset.userId = msg.user_id;
 
           if (Number(msg.user_id) === 0) {
-            div.className = 'system-notification';
-            div.textContent = `[通知] ${msg.text}`;
-            msgContainer.appendChild(div);
+            renderSystemNotification(msgContainer, msg);
             document.getElementById('empty-state').hidden = true;
             return;
           }
@@ -294,10 +417,7 @@ async function fetchMessages() {
           const senderDiv = document.createElement('div');
           senderDiv.className = 'sender';
 
-          const badgeDiv = document.createElement('span');
-          const isSuperAdmin = msg.role === 'super_admin';
-          badgeDiv.className = `user-badge${isSuperAdmin ? ' super-admin' : msg.role === 'admin' ? ' administrator' : ''}`;
-          badgeDiv.textContent = roleLabel(msg.role);
+          const badgeDiv = createRoleBadge(msg.role);
 
           const usernameSpan = document.createElement('span');
           usernameSpan.className = 'sender-name';
@@ -336,11 +456,12 @@ async function fetchMessages() {
 }
 
 async function sendMessage() {
+  if (isSendingMessage) return;
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
   if (!text) return;
-  const sendButton = document.getElementById('send-btn');
-  sendButton.disabled = true;
+  isSendingMessage = true;
+  updateComposer();
   try {
     const res = await api('sendMessage', 'POST', { text });
     if (res.error) {
@@ -354,6 +475,7 @@ async function sendMessage() {
     alert('发送失败，请检查网络后重试。');
     console.error(error);
   } finally {
+    isSendingMessage = false;
     updateComposer();
   }
 }
@@ -543,22 +665,17 @@ async function uploadAvatar(input) {
   if (!file) return;
   
   try {
-    const base64 = await compressImage(file, 100, 100);
+    const base64 = await compressImage(file, 512, 512);
     const res = await api('updateAvatar', 'POST', { avatar_base64: base64 });
     if (res.error) {
       alert('上传失败：' + res.error);
     } else {
       alert('头像更新成功！');
       userAvatars[myUserId] = base64;
-      document.querySelectorAll('.message.mine .avatar').forEach(avatar => {
-        const image = document.createElement('img');
-        image.src = base64;
-        image.alt = '';
-        avatar.replaceChildren(image);
-      });
+      updateUserAvatar(myUserId, base64, document.getElementById('current-user').textContent);
     }
   } catch (e) {
-    alert('图片处理失败');
+    alert(e.message || '图片处理失败');
   }
   input.value = ''; // 清空选中
 }
@@ -572,19 +689,49 @@ function compressImage(file, maxWidth, maxHeight) {
       img.src = e.target.result;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        if (width > height) {
-          if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
-        } else {
-          if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; }
-        }
-        canvas.width = width;
-        canvas.height = height;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        // 用 JPEG 格式压缩到 80% 质量，体积通常在 2~5KB 左右
-        resolve(canvas.toDataURL('image/jpeg', 0.8)); 
+        if (!ctx) {
+          reject(new Error('无法处理这张图片'));
+          return;
+        }
+
+        const initialScale = Math.min(1, maxWidth / img.width, maxHeight / img.height);
+        let scale = initialScale;
+        let quality = 0.9;
+        let attempts = 0;
+
+        const encode = () => {
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(blob => {
+            if (!blob) {
+              reject(new Error('图片压缩失败'));
+              return;
+            }
+            if (blob.size <= 100 * 1024) {
+              const outputReader = new FileReader();
+              outputReader.onload = () => resolve(outputReader.result);
+              outputReader.onerror = () => reject(new Error('压缩后的图片读取失败'));
+              outputReader.readAsDataURL(blob);
+              return;
+            }
+            attempts += 1;
+            if (attempts >= 12) {
+              reject(new Error('图片无法压缩到100KB以内，请选择较小的图片'));
+              return;
+            }
+            if (quality > 0.65) quality -= 0.1;
+            else {
+              quality = 0.85;
+              scale *= 0.8;
+            }
+            encode();
+          }, 'image/jpeg', quality);
+        };
+
+        encode();
       };
       img.onerror = reject;
     };
@@ -665,7 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 如果没有按 Shift，则发送消息并阻止默认换行
         if (!e.shiftKey) {
           e.preventDefault(); // 阻止默认的回车换行行为
-          sendMessage();
+          if (!e.repeat) sendMessage();
         }
         // 如果按了 Shift + Enter，就什么都不做，让它默认换行
       }
@@ -681,5 +828,5 @@ function updateComposer() {
   const sendButton = document.getElementById('send-btn');
   if (!input || !counter || !sendButton) return;
   counter.textContent = `${input.value.length} / 300`;
-  sendButton.disabled = !input.value.trim();
+  sendButton.disabled = isSendingMessage || !input.value.trim();
 }
