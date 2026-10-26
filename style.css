@@ -384,6 +384,10 @@ textarea:focus-visible {
   box-shadow: 0 24px 70px rgba(45, 62, 106, .2);
 }
 
+#members-dialog {
+  width: min(520px, calc(100% - 32px));
+}
+
 #members-dialog::backdrop,
 #my-dialog::backdrop,
 #user-info-dialog::backdrop,
