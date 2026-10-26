@@ -308,6 +308,20 @@ async function openUserInfo(userId, fallbackName, fallbackRole) {
   showUserInfo(userId, fallbackName, fallbackRole);
 }
 
+function makeProfileTrigger(element, user) {
+  element.classList.add('profile-trigger');
+  element.setAttribute('role', 'button');
+  element.tabIndex = 0;
+  element.setAttribute('aria-label', `查看用户${user.display_name}的资料`);
+  element.addEventListener('click', () => openUserInfo(user.id, user.display_name, user.role));
+  element.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openUserInfo(user.id, user.display_name, user.role);
+    }
+  });
+}
+
 async function refreshPresence() {
   try {
     const res = await api('getPresence');
@@ -420,6 +434,7 @@ async function showMembers() {
 
       const avatar = document.createElement('div');
       avatar.className = 'member-avatar';
+      makeProfileTrigger(avatar, user);
       if (user.avatar_base64) {
         const image = document.createElement('img');
         image.src = user.avatar_base64;
@@ -432,6 +447,7 @@ async function showMembers() {
       const displayName = document.createElement('span');
       displayName.className = 'member-name';
       displayName.textContent = user.display_name;
+      makeProfileTrigger(displayName, user);
 
       const identity = document.createElement('div');
       identity.className = 'member-identity';
@@ -916,6 +932,58 @@ function logout() {
   location.reload();
 }
 
+async function logoutFromProfile() {
+  try {
+    const res = await api('logout', 'POST');
+    if (res.error) throw new Error(res.error);
+    location.reload();
+  } catch (error) {
+    alert(error.message || '退出登录失败，请重试。');
+    console.error('退出登录失败：', error);
+  }
+}
+
+async function changePassword(event) {
+  event.preventDefault();
+  const currentPassword = document.getElementById('current-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-new-password').value;
+  const message = document.getElementById('change-password-msg');
+  const submitButton = document.getElementById('change-password-submit');
+  message.textContent = '';
+  message.classList.remove('success');
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    message.textContent = '请完整填写所有密码';
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    message.textContent = '两次输入的新密码不一致';
+    return;
+  }
+
+  submitButton.disabled = true;
+  try {
+    const res = await api('changePassword', 'POST', {
+      current_password: currentPassword,
+      new_password: newPassword
+    });
+    if (res.error) {
+      message.textContent = res.error;
+      return;
+    }
+    message.textContent = '密码修改成功';
+    message.classList.add('success');
+    document.getElementById('change-password-form').reset();
+    window.setTimeout(() => document.getElementById('change-password-dialog').close(), 700);
+  } catch (error) {
+    message.textContent = '修改失败，请检查网络后重试。';
+    console.error('修改密码失败：', error);
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
 // === 新增：监听键盘 Enter 发送逻辑 ===
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
@@ -925,6 +993,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const membersDialog = document.getElementById('members-dialog');
   const myDialog = document.getElementById('my-dialog');
   const userInfoDialog = document.getElementById('user-info-dialog');
+  const changePasswordDialog = document.getElementById('change-password-dialog');
   const muteDialog = document.getElementById('mute-dialog');
   const unmuteDialog = document.getElementById('unmute-dialog');
 
@@ -981,6 +1050,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('my-name-edit-form').hidden = true;
   });
   document.getElementById('my-name-edit-form').addEventListener('submit', changeDisplayName);
+  document.getElementById('change-password-btn').addEventListener('click', () => {
+    document.getElementById('change-password-form').reset();
+    document.getElementById('change-password-msg').textContent = '';
+    document.getElementById('change-password-msg').classList.remove('success');
+    changePasswordDialog.showModal();
+    document.getElementById('current-password').focus();
+  });
+  document.getElementById('change-password-close').addEventListener('click', () => changePasswordDialog.close());
+  document.getElementById('change-password-cancel').addEventListener('click', () => changePasswordDialog.close());
+  document.getElementById('change-password-form').addEventListener('submit', changePassword);
+  document.getElementById('my-logout-btn').addEventListener('click', logoutFromProfile);
   document.getElementById('mute-dialog-close').addEventListener('click', () => muteDialog.close());
   document.getElementById('mute-cancel-btn').addEventListener('click', () => muteDialog.close());
   document.getElementById('mute-form').addEventListener('submit', muteMember);

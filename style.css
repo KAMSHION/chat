@@ -347,6 +347,7 @@ textarea:focus-visible {
 #my-dialog,
 #user-info-dialog,
 #mute-dialog,
+#change-password-dialog,
 #unmute-dialog {
   width: min(400px, calc(100% - 32px));
   max-height: min(600px, 80vh);
@@ -363,6 +364,7 @@ textarea:focus-visible {
 #my-dialog::backdrop,
 #user-info-dialog::backdrop,
 #mute-dialog::backdrop,
+#change-password-dialog::backdrop,
 #unmute-dialog::backdrop {
   background: rgba(28, 38, 61, .34);
   backdrop-filter: blur(3px);
@@ -391,6 +393,7 @@ textarea:focus-visible {
 #my-dialog #my-dialog-close,
 #user-info-dialog #user-info-close,
 #mute-dialog #mute-dialog-close,
+#change-password-dialog #change-password-close,
 #unmute-dialog #unmute-dialog-close {
   width: 34px;
   min-height: 34px;
@@ -436,6 +439,18 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
+.member-avatar.profile-trigger {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+.member-avatar.profile-trigger:focus-visible,
+.member-name.profile-trigger:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
 .member-avatar img {
   width: 100%;
   height: 100%;
@@ -448,6 +463,20 @@ textarea:focus-visible {
   font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.member-name.profile-trigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.member-name.profile-trigger:hover {
+  color: var(--blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .member-identity {
@@ -609,6 +638,42 @@ textarea:focus-visible {
   align-items: center;
 }
 
+.my-profile-actions {
+  width: 100%;
+  margin-top: 22px;
+  padding-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  border-top: 1px solid #edf0f5;
+}
+
+.my-profile-actions button {
+  min-height: 40px;
+  border: 1px solid #e1e6ef;
+  border-radius: 10px;
+  color: #58647c;
+  background: #f7f8fc;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background .15s, border-color .15s;
+}
+
+.my-profile-actions button:hover {
+  border-color: #cbd3e1;
+  background: #eef1f7;
+}
+
+.my-profile-actions #my-logout-btn {
+  color: #b64952;
+  background: #fff7f7;
+  border-color: #f0d4d5;
+}
+
+.my-profile-actions #my-logout-btn:hover {
+  background: #ffeded;
+}
+
 .my-profile-avatar {
   position: relative;
   width: 112px;
@@ -748,6 +813,22 @@ textarea:focus-visible {
 
 #my-name-msg.success {
   color: #27885f;
+}
+
+#change-password-msg {
+  min-height: 20px;
+  margin: 9px 0 4px;
+  color: #d04f5f;
+  font-size: 12px;
+}
+
+#change-password-msg.success {
+  color: #27885f;
+}
+
+#change-password-form .btn-group button:disabled {
+  cursor: wait;
+  opacity: .6;
 }
 
 #mute-dialog,
@@ -1491,6 +1572,7 @@ html[data-theme="night"] #members-dialog,
 html[data-theme="night"] #my-dialog,
 html[data-theme="night"] #user-info-dialog,
 html[data-theme="night"] #mute-dialog,
+html[data-theme="night"] #change-password-dialog,
 html[data-theme="night"] #unmute-dialog {
   border-color: #3b4659;
   color: #e5eaf5;
@@ -1513,6 +1595,7 @@ html[data-theme="night"] #members-dialog #members-close,
 html[data-theme="night"] #my-dialog #my-dialog-close,
 html[data-theme="night"] #user-info-dialog #user-info-close,
 html[data-theme="night"] #mute-dialog #mute-dialog-close,
+html[data-theme="night"] #change-password-dialog #change-password-close,
 html[data-theme="night"] #unmute-dialog #unmute-dialog-close {
   color: #c5cede;
   background: #303b4d;
@@ -1595,6 +1678,44 @@ html[data-theme="night"] .my-name-edit-form input {
   border-color: #3b4659;
   color: #e7ecf5;
   background: #151d29;
+}
+
+html[data-theme="night"] .my-profile-actions {
+  border-color: #303a4b;
+}
+
+html[data-theme="night"] .my-profile-actions button {
+  border-color: #3b4659;
+  color: #d2d9e6;
+  background: #222d3d;
+}
+
+html[data-theme="night"] .my-profile-actions button:hover {
+  background: #303b4d;
+}
+
+html[data-theme="night"] .my-profile-actions #my-logout-btn {
+  border-color: #684047;
+  color: #f0a8ae;
+  background: #39282f;
+}
+
+html[data-theme="night"] .my-profile-actions #my-logout-btn:hover {
+  background: #4a3038;
+}
+
+html[data-theme="night"] #change-password-form label {
+  color: #c3ccda;
+}
+
+html[data-theme="night"] #change-password-form input {
+  border-color: #3b4659;
+  color: #e7ecf5;
+  background: #151d29;
+}
+
+html[data-theme="night"] #change-password-form input::placeholder {
+  color: #7f8ba0;
 }
 
 @media (max-width: 600px) {

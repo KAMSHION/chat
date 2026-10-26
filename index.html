@@ -140,7 +140,34 @@
             <button id="my-name-save-btn" type="submit" class="primary-btn">保存</button>
           </div>
         </form>
+        <div class="my-profile-actions">
+          <button id="change-password-btn" class="secondary-btn" type="button">修改密码</button>
+          <button id="my-logout-btn" class="secondary-btn" type="button">退出登录</button>
+        </div>
       </div>
+    </dialog>
+
+    <dialog id="change-password-dialog" aria-labelledby="change-password-title">
+      <div class="members-dialog-header">
+        <div>
+          <h2 id="change-password-title">修改密码</h2>
+          <p>请先验证当前密码</p>
+        </div>
+        <button id="change-password-close" type="button" aria-label="关闭">×</button>
+      </div>
+      <form id="change-password-form" class="username-form">
+        <label for="current-password">当前密码</label>
+        <input id="current-password" type="password" autocomplete="current-password" required>
+        <label for="new-password">新密码</label>
+        <input id="new-password" type="password" maxlength="128" autocomplete="new-password" required>
+        <label for="confirm-new-password">确认新密码</label>
+        <input id="confirm-new-password" type="password" maxlength="128" autocomplete="new-password" required>
+        <p id="change-password-msg" role="status" aria-live="polite"></p>
+        <div class="btn-group">
+          <button id="change-password-cancel" type="button" class="secondary-btn">取消</button>
+          <button id="change-password-submit" type="submit" class="primary-btn">确认修改</button>
+        </div>
+      </form>
     </dialog>
 
     <dialog id="user-info-dialog" aria-labelledby="user-info-title">

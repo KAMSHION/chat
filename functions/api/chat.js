@@ -59,6 +59,33 @@ export async function onRequest(context) {
     const session = await db.prepare("SELECT * FROM sessions WHERE session_id = ?").bind(sessionId).first();
     if (!session) return json({ error: '会话已过期，请重新登录' }, 401);
 
+    if (action === 'logout') {
+      await db.prepare("DELETE FROM sessions WHERE session_id = ?").bind(sessionId).run();
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Set-Cookie': 'session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax'
+        }
+      });
+    }
+
+    if (action === 'changePassword') {
+      const { current_password, new_password } = await request.json();
+      if (typeof current_password !== 'string' || !current_password || typeof new_password !== 'string' || !new_password) {
+        return json({ error: '请完整填写当前密码和新密码' }, 400);
+      }
+      if (new_password.length > 128) return json({ error: '新密码不能超过128个字符' }, 400);
+      const user = await db.prepare("SELECT id, password_hash, salt FROM users WHERE id = ?").bind(session.user_id).first();
+      if (!user) return json({ error: '用户不存在' }, 404);
+      const currentHash = await hashPassword(current_password, user.salt);
+      if (currentHash !== user.password_hash) return json({ error: '当前密码不正确' }, 403);
+      const newSalt = crypto.randomUUID();
+      const newHash = await hashPassword(new_password, newSalt);
+      await db.prepare("UPDATE users SET password_hash = ?, salt = ? WHERE id = ?").bind(newHash, newSalt, user.id).run();
+      return json({ success: true });
+    }
+
     if (action === 'heartbeat') {
       await db.prepare("UPDATE sessions SET last_seen = ? WHERE session_id = ?").bind(Date.now(), sessionId).run();
       await db.prepare("DELETE FROM sessions WHERE last_seen < ?").bind(Date.now() - 90000).run();
