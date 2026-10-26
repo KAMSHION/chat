@@ -434,6 +434,28 @@ textarea:focus-visible {
   max-height: min(440px, calc(80vh - 80px));
   padding: 8px 12px;
   overflow-y: auto;
+  scrollbar-color: #c7cedb transparent;
+  scrollbar-width: thin;
+}
+
+#members-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#members-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#members-list::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #c7cedb;
+  background-clip: padding-box;
+}
+
+#members-list::-webkit-scrollbar-thumb:hover {
+  background: #aab4c5;
+  background-clip: padding-box;
 }
 
 .member-item {
@@ -1508,6 +1530,20 @@ html[data-theme="night"] #messages {
     radial-gradient(circle at 1px 1px, rgba(167, 183, 210, .07) 1px, transparent 0) 0 0 / 22px 22px,
     #151e2b;
   scrollbar-color: #48556a transparent;
+}
+
+html[data-theme="night"] #members-list {
+  scrollbar-color: #48556a transparent;
+}
+
+html[data-theme="night"] #members-list::-webkit-scrollbar-thumb {
+  background: #48556a;
+  background-clip: padding-box;
+}
+
+html[data-theme="night"] #members-list::-webkit-scrollbar-thumb:hover {
+  background: #62718a;
+  background-clip: padding-box;
 }
 
 html[data-theme="night"] #messages::-webkit-scrollbar-thumb {
