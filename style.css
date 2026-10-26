@@ -46,6 +46,30 @@ textarea:focus-visible {
   width: min(100%, 1200px);
 }
 
+.project-support {
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(226, 231, 241, .75);
+  color: #8992a5;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.project-support a {
+  display: inline-block;
+  margin-left: 4px;
+  color: #526de5;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.project-support a:hover {
+  color: #4059ca;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 #auth-panel,
 #register-panel {
   width: min(100%, 420px);
@@ -1381,6 +1405,19 @@ html[data-theme="night"] .chat-heading p {
 
 html[data-theme="night"] .online-count {
   color: #aeb9ca;
+}
+
+html[data-theme="night"] .project-support {
+  color: #9ca8bb;
+  border-color: rgba(59, 70, 89, .8);
+}
+
+html[data-theme="night"] .project-support a {
+  color: #aebaff;
+}
+
+html[data-theme="night"] .project-support a:hover {
+  color: #c0caff;
 }
 
 html[data-theme="night"] #auth-form label,
