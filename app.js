@@ -5,7 +5,10 @@ let messagesFetchQueued = false;
 let isSendingMessage = false;
 let myUserId = 0;
 let myRole = 'user';
+let myAccount = '';
+let myDisplayName = '';
 let userRoles = new Map();
+let userProfiles = new Map();
 let muteTarget = null;
 let userAvatars = {}; // 存放所有用户的头像字典 {id: base64}
 
@@ -81,8 +84,15 @@ async function login() {
     } else {
       myUserId = res.userId;
       myRole = ['super_admin', 'admin'].includes(res.role) ? res.role : 'user';
+      myAccount = res.account;
+      myDisplayName = res.displayName;
       userRoles.set(String(myUserId), myRole);
-      document.getElementById('current-user').textContent = res.displayName;
+      document.getElementById('my-button-name').textContent = myDisplayName;
+      document.getElementById('my-profile-name').textContent = myDisplayName;
+      document.getElementById('my-account').textContent = myAccount;
+      const myBadge = document.getElementById('my-profile-role');
+      myBadge.className = createRoleBadge(myRole).className;
+      myBadge.textContent = roleLabel(myRole);
       document.getElementById('auth-panel').style.display = 'none';
       document.getElementById('register-panel').hidden = true;
       document.getElementById('chat-panel').style.display = 'flex';
@@ -146,6 +156,12 @@ function updateRoleBadges(rolesById) {
       badge.textContent = roleLabel(role);
     }
   });
+  const myBadge = document.getElementById('my-profile-role');
+  const myCurrentRole = rolesById.get(String(myUserId));
+  if (myBadge && myCurrentRole) {
+    myBadge.className = createRoleBadge(myCurrentRole).className;
+    myBadge.textContent = roleLabel(myCurrentRole);
+  }
 }
 
 function renderSystemNotification(container, message) {
@@ -209,7 +225,12 @@ function renderSystemNotification(container, message) {
 
 // 登录后启动
 async function startChat() {
-  await refreshPresence();
+  await Promise.all([
+    refreshPresence(),
+    loadUsers().catch(error => {
+      console.error('加载用户头像失败：', error);
+    })
+  ]);
   fetchMessages();
   heartbeat();
   setInterval(heartbeat, 60000);
@@ -241,12 +262,50 @@ async function loadUsers() {
   if (res.error) throw new Error(res.error);
   if (res.users) {
     res.users.forEach(user => {
+      userProfiles.set(String(user.id), user);
       if (user.avatar_base64) userAvatars[user.id] = user.avatar_base64;
       else delete userAvatars[user.id];
       updateUserAvatar(user.id, user.avatar_base64, user.display_name);
     });
   }
   return res;
+}
+
+function showUserInfo(userId, fallbackName = '', fallbackRole = 'user') {
+  const profile = userProfiles.get(String(userId));
+  const displayName = profile?.display_name || fallbackName || '未知用户';
+  const role = profile?.role || fallbackRole;
+  const avatarImage = document.getElementById('user-info-avatar-image');
+  avatarImage.replaceChildren();
+  const avatarBase64 = profile?.avatar_base64 || userAvatars[userId];
+  if (avatarBase64) {
+    const image = document.createElement('img');
+    image.src = avatarBase64;
+    image.alt = '';
+    avatarImage.appendChild(image);
+  } else {
+    avatarImage.textContent = displayName.charAt(0).toUpperCase();
+  }
+  document.getElementById('user-info-description').textContent = `用户${displayName}的个人资料`;
+  document.getElementById('user-info-name').textContent = displayName;
+  document.getElementById('user-info-account').textContent = profile?.account || '—';
+  const badge = document.getElementById('user-info-role');
+  badge.className = createRoleBadge(role).className;
+  badge.textContent = roleLabel(role);
+  const dialog = document.getElementById('user-info-dialog');
+  dialog.dataset.userId = String(userId);
+  dialog.showModal();
+}
+
+async function openUserInfo(userId, fallbackName, fallbackRole) {
+  if (!userProfiles.has(String(userId))) {
+    try {
+      await loadUsers();
+    } catch (error) {
+      console.error('加载用户资料失败：', error);
+    }
+  }
+  showUserInfo(userId, fallbackName, fallbackRole);
 }
 
 async function refreshPresence() {
@@ -261,11 +320,26 @@ async function refreshPresence() {
       return isKnownRole(user.role) && userRoles.has(userId) && userRoles.get(userId) !== user.role;
     });
     users.forEach(user => {
-      if (isKnownRole(user.role)) userRoles.set(String(user.id), user.role);
+      if (isKnownRole(user.role)) {
+        userRoles.set(String(user.id), user.role);
+        const profile = userProfiles.get(String(user.id));
+        if (profile) profile.role = user.role;
+      }
     });
     const currentUser = usersById.get(String(myUserId));
     if (currentUser && isKnownRole(currentUser.role)) myRole = currentUser.role;
     updateRoleBadges(userRoles);
+    const userInfoDialog = document.getElementById('user-info-dialog');
+    if (userInfoDialog.open) {
+      const profile = userProfiles.get(userInfoDialog.dataset.userId);
+      const infoUser = usersById.get(userInfoDialog.dataset.userId);
+      if (profile && infoUser) {
+        profile.role = infoUser.role || profile.role;
+        const badge = document.getElementById('user-info-role');
+        badge.className = createRoleBadge(profile.role).className;
+        badge.textContent = roleLabel(profile.role);
+      }
+    }
 
     document.querySelectorAll('.member-item').forEach(item => {
       const user = usersById.get(item.dataset.userId);
@@ -282,8 +356,16 @@ async function refreshPresence() {
 }
 
 function updateUserAvatar(userId, avatarBase64, displayName) {
+  const profile = userProfiles.get(String(userId));
+  if (profile) {
+    profile.avatar_base64 = avatarBase64;
+    profile.display_name = displayName;
+  }
   const selector = `[data-user-id="${userId}"]`;
-  document.querySelectorAll(`.message${selector} .avatar, .member-item${selector} .member-avatar`).forEach(avatar => {
+  const selectors = [` .message${selector} .avatar`, `.member-item${selector} .member-avatar`];
+  if (Number(userId) === Number(myUserId)) selectors.push('#my-button-avatar', '#my-profile-avatar-image');
+  if (document.getElementById('user-info-dialog').dataset.userId === String(userId)) selectors.push('#user-info-avatar-image');
+  document.querySelectorAll(selectors.join(',')).forEach(avatar => {
     if (avatarBase64) {
       let image = avatar.querySelector('img');
       if (!image) {
@@ -478,6 +560,31 @@ async function fetchMessages() {
           const usernameSpan = document.createElement('span');
           usernameSpan.className = 'sender-name';
           usernameSpan.textContent = msg.display_name;
+          const isOtherUser = Number(msg.user_id) !== Number(myUserId);
+          if (isOtherUser) {
+            avatarDiv.classList.add('profile-trigger');
+            avatarDiv.setAttribute('role', 'button');
+            avatarDiv.tabIndex = 0;
+            avatarDiv.setAttribute('aria-label', `查看用户${msg.display_name}的资料`);
+            avatarDiv.addEventListener('click', () => openUserInfo(msg.user_id, msg.display_name, messageRole));
+            avatarDiv.addEventListener('keydown', event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openUserInfo(msg.user_id, msg.display_name, messageRole);
+              }
+            });
+            usernameSpan.classList.add('profile-trigger');
+            usernameSpan.tabIndex = 0;
+            usernameSpan.setAttribute('role', 'button');
+            usernameSpan.setAttribute('aria-label', `查看用户${msg.display_name}的资料`);
+            usernameSpan.addEventListener('click', () => openUserInfo(msg.user_id, msg.display_name, messageRole));
+            usernameSpan.addEventListener('keydown', event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openUserInfo(msg.user_id, msg.display_name, messageRole);
+              }
+            });
+          }
           senderDiv.append(badgeDiv, usernameSpan);
 
           const contentDiv = document.createElement('div');
@@ -497,6 +604,12 @@ async function fetchMessages() {
           bodyDiv.appendChild(timeDiv);
           div.appendChild(avatarDiv);
           div.appendChild(bodyDiv);
+          userProfiles.set(userId, {
+            ...(userProfiles.get(userId) || {}),
+            id: msg.user_id,
+            display_name: msg.display_name,
+            role: messageRole
+          });
 
           msgContainer.appendChild(div);
         });
@@ -538,9 +651,9 @@ async function sendMessage() {
 
 async function changeDisplayName(event) {
   event.preventDefault();
-  const input = document.getElementById('new-display-name');
-  const message = document.getElementById('username-msg');
-  const saveButton = document.getElementById('username-save-btn');
+  const input = document.getElementById('my-name-input');
+  const message = document.getElementById('my-name-msg');
+  const saveButton = document.getElementById('my-name-save-btn');
   const displayName = input.value.trim();
   message.textContent = '';
   message.classList.remove('success');
@@ -558,7 +671,11 @@ async function changeDisplayName(event) {
       return;
     }
 
-    document.getElementById('current-user').textContent = res.displayName;
+    myDisplayName = res.displayName;
+    const myProfile = userProfiles.get(String(myUserId));
+    if (myProfile) myProfile.display_name = myDisplayName;
+    document.getElementById('my-button-name').textContent = myDisplayName;
+    document.getElementById('my-profile-name').textContent = myDisplayName;
     document.querySelectorAll('.message').forEach(row => {
       if (Number(row.dataset.userId) !== Number(myUserId)) return;
       const name = row.querySelector('.sender-name');
@@ -570,16 +687,15 @@ async function changeDisplayName(event) {
         badge.classList.toggle('super-admin', myRole === 'super_admin');
         badge.classList.toggle('administrator', myRole === 'admin');
       }
-      if (avatar && !avatar.querySelector('img')) {
-        avatar.textContent = res.displayName.charAt(0).toUpperCase();
-      }
+      if (avatar && !avatar.querySelector('img')) avatar.textContent = res.displayName.charAt(0).toUpperCase();
     });
 
     const member = document.querySelector(`.member-item[data-user-id="${myUserId}"] .member-name`);
     if (member) member.textContent = res.displayName;
+    updateUserAvatar(myUserId, userAvatars[myUserId], myDisplayName);
     message.textContent = '用户名已更新';
     message.classList.add('success');
-    window.setTimeout(() => document.getElementById('username-dialog').close(), 500);
+    document.getElementById('my-name-edit-form').hidden = true;
   } catch (error) {
     message.textContent = '更新失败，请检查网络后重试。';
     console.error('更改用户名失败：', error);
@@ -728,7 +844,7 @@ async function uploadAvatar(input) {
     } else {
       alert('头像更新成功！');
       userAvatars[myUserId] = base64;
-      updateUserAvatar(myUserId, base64, document.getElementById('current-user').textContent);
+      updateUserAvatar(myUserId, base64, myDisplayName);
     }
   } catch (e) {
     alert(e.message || '图片处理失败');
@@ -807,7 +923,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const registerForm = document.getElementById('register-form');
   const messageForm = document.getElementById('message-form');
   const membersDialog = document.getElementById('members-dialog');
-  const usernameDialog = document.getElementById('username-dialog');
+  const myDialog = document.getElementById('my-dialog');
+  const userInfoDialog = document.getElementById('user-info-dialog');
   const muteDialog = document.getElementById('mute-dialog');
   const unmuteDialog = document.getElementById('unmute-dialog');
 
@@ -843,16 +960,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('members-btn').addEventListener('click', showMembers);
   document.getElementById('members-close').addEventListener('click', () => membersDialog.close());
-  document.getElementById('change-name-btn').addEventListener('click', () => {
-    document.getElementById('new-display-name').value = document.getElementById('current-user').textContent;
-    document.getElementById('username-msg').textContent = '';
-    document.getElementById('username-msg').classList.remove('success');
-    usernameDialog.showModal();
-    document.getElementById('new-display-name').focus();
+  document.getElementById('my-btn').addEventListener('click', () => {
+    document.getElementById('my-profile-name').textContent = myDisplayName;
+    document.getElementById('my-account').textContent = myAccount;
+    document.getElementById('my-name-edit-form').hidden = true;
+    document.getElementById('my-name-msg').textContent = '';
+    myDialog.showModal();
   });
-  document.getElementById('username-dialog-close').addEventListener('click', () => usernameDialog.close());
-  document.getElementById('username-cancel-btn').addEventListener('click', () => usernameDialog.close());
-  document.getElementById('username-form').addEventListener('submit', changeDisplayName);
+  document.getElementById('my-dialog-close').addEventListener('click', () => myDialog.close());
+  document.getElementById('user-info-close').addEventListener('click', () => userInfoDialog.close());
+  document.getElementById('my-profile-avatar').addEventListener('click', () => document.getElementById('avatar-input').click());
+  document.getElementById('my-name-edit-btn').addEventListener('click', () => {
+    const form = document.getElementById('my-name-edit-form');
+    form.hidden = false;
+    document.getElementById('my-name-input').value = myDisplayName;
+    document.getElementById('my-name-msg').textContent = '';
+    document.getElementById('my-name-input').focus();
+  });
+  document.getElementById('my-name-cancel-btn').addEventListener('click', () => {
+    document.getElementById('my-name-edit-form').hidden = true;
+  });
+  document.getElementById('my-name-edit-form').addEventListener('submit', changeDisplayName);
   document.getElementById('mute-dialog-close').addEventListener('click', () => muteDialog.close());
   document.getElementById('mute-cancel-btn').addEventListener('click', () => muteDialog.close());
   document.getElementById('mute-form').addEventListener('submit', muteMember);

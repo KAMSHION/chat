@@ -47,7 +47,7 @@ export async function onRequest(context) {
       if (hash !== user.password_hash) return json({ error: '账户名或密码错误' }, 401);
       const sessionId = crypto.randomUUID();
       await db.prepare("INSERT INTO sessions (session_id, user_id, role, last_seen) VALUES (?, ?, ?, ?)").bind(sessionId, user.id, user.role, Date.now()).run();
-      return new Response(JSON.stringify({ success: true, displayName: user.display_name, userId: user.id, role: user.role, sessionId }), {
+      return new Response(JSON.stringify({ success: true, account: user.account, displayName: user.display_name, userId: user.id, role: user.role, sessionId }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', 'Set-Cookie': `session=${sessionId}; Path=/; HttpOnly; SameSite=Lax` }
       });
@@ -69,7 +69,7 @@ export async function onRequest(context) {
     if (action === 'getUsers') {
       const onlineSince = Date.now() - 90000;
       const { results } = await db.prepare(`
-        SELECT users.id, users.display_name, users.avatar_base64, users.role,
+        SELECT users.id, users.account, users.display_name, users.avatar_base64, users.role,
           (SELECT muted_until FROM user_mutes WHERE user_id = users.id) AS muted_until,
           EXISTS(
             SELECT 1 FROM sessions
