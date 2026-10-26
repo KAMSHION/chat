@@ -106,7 +106,9 @@ export async function onRequest(context) {
         ORDER BY CASE users.role
           WHEN 'super_admin' THEN 0
           WHEN 'admin' THEN 1
-          ELSE 2
+          WHEN 'ai_admin' THEN 1
+          WHEN 'ai' THEN 2
+          ELSE 3
         END, users.display_name COLLATE NOCASE
       `).bind(onlineSince).all();
       const online = await db.prepare("SELECT COUNT(DISTINCT user_id) AS count FROM sessions WHERE last_seen > ?").bind(onlineSince).first();
@@ -130,7 +132,7 @@ export async function onRequest(context) {
 
     if (action === 'muteUser') {
       const moderator = await db.prepare("SELECT display_name, role FROM users WHERE id = ?").bind(session.user_id).first();
-      if (!moderator || !['super_admin', 'admin'].includes(moderator.role)) return json({ error: '没有禁言权限' }, 403);
+      if (!moderator || !['super_admin', 'admin', 'ai_admin'].includes(moderator.role)) return json({ error: '没有禁言权限' }, 403);
       const { user_id, duration_minutes, reason } = await request.json();
       const userId = Number(user_id);
       const durationMinutes = Number(duration_minutes);
@@ -143,8 +145,8 @@ export async function onRequest(context) {
       if (!Number.isSafeInteger(mutedUntil)) return json({ error: '禁言时长过长' }, 400);
       const target = await db.prepare("SELECT id, display_name, role FROM users WHERE id = ?").bind(userId).first();
       if (!target) return json({ error: '成员不存在' }, 404);
-      if (target.role === 'super_admin' || (moderator.role === 'admin' && target.role !== 'user')) {
-        return json({ error: moderator.role === 'admin' ? '管理只能禁言普通用户' : '不能禁言超管' }, 403);
+      if (target.role === 'super_admin' || (['admin', 'ai_admin'].includes(moderator.role) && !['user', 'ai'].includes(target.role))) {
+        return json({ error: ['admin', 'ai_admin'].includes(moderator.role) ? '管理只能禁言普通用户或AI用户' : '不能禁言超管' }, 403);
       }
       const notificationText = JSON.stringify({
         type: 'moderation',
@@ -168,14 +170,14 @@ export async function onRequest(context) {
 
     if (action === 'unmuteUser') {
       const moderator = await db.prepare("SELECT display_name, role FROM users WHERE id = ?").bind(session.user_id).first();
-      if (!moderator || !['super_admin', 'admin'].includes(moderator.role)) return json({ error: '没有解除禁言权限' }, 403);
+      if (!moderator || !['super_admin', 'admin', 'ai_admin'].includes(moderator.role)) return json({ error: '没有解除禁言权限' }, 403);
       const { user_id } = await request.json();
       const userId = Number(user_id);
       if (!Number.isSafeInteger(userId) || userId <= 0) return json({ error: '成员无效' }, 400);
       const target = await db.prepare("SELECT id, display_name, role FROM users WHERE id = ?").bind(userId).first();
       if (!target) return json({ error: '成员不存在' }, 404);
-      if (target.role === 'super_admin' || (moderator.role === 'admin' && target.role !== 'user')) {
-        return json({ error: moderator.role === 'admin' ? '管理只能解除普通用户的禁言' : '不能解除超管的禁言' }, 403);
+      if (target.role === 'super_admin' || (['admin', 'ai_admin'].includes(moderator.role) && !['user', 'ai'].includes(target.role))) {
+        return json({ error: ['admin', 'ai_admin'].includes(moderator.role) ? '管理只能解除普通用户或AI用户的禁言' : '不能解除超管的禁言' }, 403);
       }
       const mute = await db.prepare("SELECT muted_until FROM user_mutes WHERE user_id = ?").bind(userId).first();
       if (!mute || mute.muted_until <= Date.now()) return json({ error: '该成员当前未被禁言' }, 400);

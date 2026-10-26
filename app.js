@@ -83,7 +83,7 @@ async function login() {
       showAuthMessage(res.error);
     } else {
       myUserId = res.userId;
-      myRole = ['super_admin', 'admin'].includes(res.role) ? res.role : 'user';
+      myRole = normalizeRole(res.role);
       myAccount = res.account;
       myDisplayName = res.displayName;
       userRoles.set(String(myUserId), myRole);
@@ -91,8 +91,7 @@ async function login() {
       document.getElementById('my-profile-name').textContent = myDisplayName;
       document.getElementById('my-account').textContent = myAccount;
       const myBadge = document.getElementById('my-profile-role');
-      myBadge.className = createRoleBadge(myRole).className;
-      myBadge.textContent = roleLabel(myRole);
+      setRoleBadges(myBadge, myRole);
       document.getElementById('auth-panel').style.display = 'none';
       document.getElementById('register-panel').hidden = true;
       document.getElementById('chat-panel').style.display = 'flex';
@@ -121,47 +120,60 @@ function showLoginPage(message = '', isSuccess = false) {
 function roleLabel(role) {
   if (role === 'super_admin') return '超管';
   if (role === 'admin') return '管理';
+  if (role === 'ai') return 'AI';
   return 'Lv.1';
 }
 
+function roleLabels(role) {
+  if (role === 'ai_admin') return ['admin', 'ai'];
+  return [role];
+}
+
 function createRoleBadge(role) {
-  const badge = document.createElement('span');
-  badge.className = `user-badge${role === 'super_admin' ? ' super-admin' : role === 'admin' ? ' administrator' : ''}`;
-  badge.textContent = roleLabel(role);
-  return badge;
+  const group = document.createElement('span');
+  group.className = 'role-badges';
+  setRoleBadges(group, role);
+  return group;
+}
+
+function setRoleBadges(group, role) {
+  group.className = 'role-badges';
+  group.replaceChildren(...roleLabels(role).map(labelRole => {
+    const badge = document.createElement('span');
+    badge.className = `user-badge${labelRole === 'super_admin' ? ' super-admin' : labelRole === 'admin' ? ' administrator' : labelRole === 'ai' ? ' ai' : ''}`;
+    badge.textContent = roleLabel(labelRole);
+    return badge;
+  }));
 }
 
 function normalizeRole(role) {
-  return ['super_admin', 'admin'].includes(role) ? role : 'user';
+  return ['super_admin', 'admin', 'ai', 'ai_admin'].includes(role) ? role : 'user';
 }
 
 function isKnownRole(role) {
-  return role === 'super_admin' || role === 'admin' || role === 'user';
+  return role === 'super_admin' || role === 'admin' || role === 'ai' || role === 'ai_admin' || role === 'user';
+}
+
+function hasAdminPermissions(role) {
+  return role === 'admin' || role === 'ai_admin';
 }
 
 function updateRoleBadges(rolesById) {
-  document.querySelectorAll('.message[data-user-id] .user-badge').forEach(badge => {
-    const role = rolesById.get(badge.closest('.message').dataset.userId);
+  document.querySelectorAll('.message[data-user-id] .role-badges').forEach(badges => {
+    const role = rolesById.get(badges.closest('.message').dataset.userId);
     if (role) {
-      badge.className = createRoleBadge(role).className;
-      badge.textContent = roleLabel(role);
+      badges.replaceWith(createRoleBadge(role));
     }
   });
   document.querySelectorAll('.member-item').forEach(item => {
     const role = rolesById.get(item.dataset.userId);
     if (!role) return;
-    const badge = item.querySelector('.member-identity .user-badge');
-    if (badge) {
-      badge.className = createRoleBadge(role).className;
-      badge.textContent = roleLabel(role);
-    }
+    const badges = item.querySelector('.member-identity .role-badges');
+    if (badges) badges.replaceWith(createRoleBadge(role));
   });
   const myBadge = document.getElementById('my-profile-role');
   const myCurrentRole = rolesById.get(String(myUserId));
-  if (myBadge && myCurrentRole) {
-    myBadge.className = createRoleBadge(myCurrentRole).className;
-    myBadge.textContent = roleLabel(myCurrentRole);
-  }
+  if (myBadge && myCurrentRole) setRoleBadges(myBadge, myCurrentRole);
 }
 
 function renderSystemNotification(container, message) {
@@ -290,8 +302,7 @@ function showUserInfo(userId, fallbackName = '', fallbackRole = 'user') {
   document.getElementById('user-info-name').textContent = displayName;
   document.getElementById('user-info-account').textContent = profile?.account || '—';
   const badge = document.getElementById('user-info-role');
-  badge.className = createRoleBadge(role).className;
-  badge.textContent = roleLabel(role);
+  setRoleBadges(badge, role);
   const dialog = document.getElementById('user-info-dialog');
   dialog.dataset.userId = String(userId);
   dialog.showModal();
@@ -350,8 +361,7 @@ async function refreshPresence() {
       if (profile && infoUser) {
         profile.role = infoUser.role || profile.role;
         const badge = document.getElementById('user-info-role');
-        badge.className = createRoleBadge(profile.role).className;
-        badge.textContent = roleLabel(profile.role);
+        setRoleBadges(badge, profile.role);
       }
     }
 
@@ -413,9 +423,9 @@ async function showMembers() {
     });
     updateRoleBadges(userRoles);
 
-    const roleOrder = { super_admin: 0, admin: 1 };
+    const roleOrder = { super_admin: 0, admin: 1, ai_admin: 1, ai: 2 };
     const users = (res.users || []).sort((first, second) =>
-      (roleOrder[first.role] ?? 2) - (roleOrder[second.role] ?? 2) ||
+      (roleOrder[first.role] ?? 3) - (roleOrder[second.role] ?? 3) ||
       first.display_name.localeCompare(second.display_name, 'zh-CN')
     );
     count.textContent = `共 ${users.length} 位成员`;
@@ -451,9 +461,7 @@ async function showMembers() {
 
       const identity = document.createElement('div');
       identity.className = 'member-identity';
-      const badge = document.createElement('span');
-      badge.className = `user-badge${user.role === 'super_admin' ? ' super-admin' : user.role === 'admin' ? ' administrator' : ''}`;
-      badge.textContent = roleLabel(user.role);
+      const badge = createRoleBadge(user.role);
       identity.append(displayName, badge);
 
       const onlineState = document.createElement('span');
@@ -476,7 +484,7 @@ async function showMembers() {
 
       const canModerateTarget = myRole === 'super_admin'
         ? user.role !== 'super_admin'
-        : myRole === 'admin' && user.role === 'user';
+        : hasAdminPermissions(myRole) && ['user', 'ai'].includes(user.role);
       if (canModerateTarget) {
         const muteButton = document.createElement('button');
         muteButton.className = 'member-mute-btn';
@@ -695,14 +703,10 @@ async function changeDisplayName(event) {
     document.querySelectorAll('.message').forEach(row => {
       if (Number(row.dataset.userId) !== Number(myUserId)) return;
       const name = row.querySelector('.sender-name');
-      const badge = row.querySelector('.user-badge');
+      const badge = row.querySelector('.role-badges');
       const avatar = row.querySelector('.avatar');
       if (name) name.textContent = res.displayName;
-      if (badge) {
-        badge.textContent = roleLabel(myRole);
-        badge.classList.toggle('super-admin', myRole === 'super_admin');
-        badge.classList.toggle('administrator', myRole === 'admin');
-      }
+      if (badge) setRoleBadges(badge, myRole);
       if (avatar && !avatar.querySelector('img')) avatar.textContent = res.displayName.charAt(0).toUpperCase();
     });
 

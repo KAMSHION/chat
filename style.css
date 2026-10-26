@@ -549,6 +549,19 @@ textarea:focus-visible {
   background: #dff4eb;
 }
 
+.role-badges {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.user-badge.ai {
+  color: #7253a3;
+  background: #eee7fb;
+}
+
 .member-mute-state {
   margin-left: auto;
   color: #c65b62;
@@ -1596,6 +1609,11 @@ html[data-theme="night"] .user-badge.super-admin {
 html[data-theme="night"] .user-badge.administrator {
   color: #8ed4b5;
   background: #26483e;
+}
+
+html[data-theme="night"] .user-badge.ai {
+  color: #cfb5ff;
+  background: #403253;
 }
 
 html[data-theme="night"] .composer {
