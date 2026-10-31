@@ -10,7 +10,6 @@
 <body>
   <main class="app-shell">
     <section id="auth-panel" aria-labelledby="auth-title">
-      <button class="language-toggle auth-language-toggle" type="button" aria-label="Switch to English">English</button>
       <div class="brand-mark" aria-hidden="true">聊</div>
       <p class="eyebrow">WELCOME TO</p>
       <h1 id="auth-title">极简聊窗</h1>
@@ -34,7 +33,6 @@
     </section>
 
     <section id="register-panel" aria-labelledby="register-title" hidden>
-      <button class="language-toggle auth-language-toggle" type="button" aria-label="Switch to English">English</button>
       <div class="brand-mark" aria-hidden="true">聊</div>
       <p class="eyebrow">CREATE ACCOUNT</p>
       <h1 id="register-title">创建账号</h1>
@@ -74,8 +72,6 @@
         </div>
         <div class="header-actions">
           <button id="members-btn" type="button">成员</button>
-          <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">切换到极夜</button>
-          <button id="language-toggle" class="language-toggle" type="button" aria-label="Switch to English">English</button>
           <button id="my-btn" class="my-button" type="button" aria-label="打开我的资料">
             <span id="my-button-avatar" class="my-button-avatar"></span>
             <span id="my-button-name" class="my-button-name"></span>
@@ -149,6 +145,13 @@
             <button id="my-name-save-btn" type="submit" class="primary-btn">保存</button>
           </div>
         </form>
+        <section class="my-preferences" aria-labelledby="my-preferences-title">
+          <h3 id="my-preferences-title">显示偏好</h3>
+          <div class="my-preference-actions">
+            <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">切换到极夜</button>
+            <button id="language-toggle" class="language-toggle" type="button" aria-label="切换到英文">English</button>
+          </div>
+        </section>
         <div class="my-profile-actions">
           <button id="change-password-btn" class="secondary-btn" type="button">修改密码</button>
           <button id="my-logout-btn" class="secondary-btn" type="button">退出登录</button>

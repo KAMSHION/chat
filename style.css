@@ -82,24 +82,6 @@ textarea:focus-visible {
   box-shadow: 0 24px 70px rgba(45, 62, 106, .12);
 }
 
-.auth-language-toggle {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid #e4e8f0;
-  border-radius: 9px;
-  color: #58647c;
-  background: #fff;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.auth-language-toggle:hover {
-  background: #f6f8fc;
-}
-
 .brand-mark {
   width: 54px;
   height: 54px;
@@ -718,6 +700,49 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+#my-dialog .my-profile {
+  max-height: min(520px, calc(80vh - 70px));
+  overflow-y: auto;
+}
+
+.my-preferences {
+  width: 100%;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #edf0f5;
+}
+
+.my-preferences h3 {
+  margin: 0 0 10px;
+  color: #69758b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.my-preference-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.my-preference-actions button {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid #e1e6ef;
+  border-radius: 10px;
+  color: #58647c;
+  background: #f7f8fc;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background .15s, border-color .15s;
+}
+
+.my-preference-actions button:hover {
+  border-color: #cbd3e1;
+  background: #eef1f7;
 }
 
 .my-profile-actions {
@@ -1417,22 +1442,6 @@ textarea:focus-visible {
   }
 }
 
-.theme-toggle {
-  min-height: 36px;
-  padding: 0 12px;
-  border: 1px solid #e1e6ef;
-  border-radius: 10px;
-  color: #58647c;
-  background: rgba(255, 255, 255, .9);
-  box-shadow: 0 4px 12px rgba(45, 62, 106, .08);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.theme-toggle:hover {
-  background: #fff;
-}
-
 html[data-theme="night"] body {
   color: #e5eaf5;
   background:
@@ -1520,16 +1529,14 @@ html[data-theme="night"] #input-area {
   background: #1b2432;
 }
 
-html[data-theme="night"] #header button,
-html[data-theme="night"] .theme-toggle {
+html[data-theme="night"] #header button {
   border-color: #3b4659;
   color: #d2d9e6;
   background: #222d3d;
   box-shadow: none;
 }
 
-html[data-theme="night"] #header button:hover,
-html[data-theme="night"] .theme-toggle:hover {
+html[data-theme="night"] #header button:hover {
   background: #303b4d;
 }
 
@@ -1798,6 +1805,24 @@ html[data-theme="night"] .my-name-edit-form input {
   border-color: #3b4659;
   color: #e7ecf5;
   background: #151d29;
+}
+
+html[data-theme="night"] .my-preferences {
+  border-color: #303a4b;
+}
+
+html[data-theme="night"] .my-preferences h3 {
+  color: #9ca8bb;
+}
+
+html[data-theme="night"] .my-preference-actions button {
+  border-color: #3b4659;
+  color: #d2d9e6;
+  background: #222d3d;
+}
+
+html[data-theme="night"] .my-preference-actions button:hover {
+  background: #303b4d;
 }
 
 html[data-theme="night"] .my-profile-actions {

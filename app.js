@@ -57,6 +57,7 @@ const translations = {
   '关闭成员列表': 'Close members list',
   '我的': 'My Profile',
   '管理你的个人资料': 'Manage your profile',
+  '显示偏好': 'Display preferences',
   '关闭': 'Close',
   '点击更改头像': 'Click to change your avatar',
   '选择头像': 'Choose an avatar',
@@ -1138,6 +1139,7 @@ function setTheme(theme) {
   const toggle = document.getElementById('theme-toggle');
   toggle.textContent = localizeText(isNight ? '切换到白昼' : '切换到极夜');
   toggle.setAttribute('aria-pressed', String(isNight));
+  toggle.setAttribute('aria-label', toggle.textContent);
   document.querySelector('meta[name="theme-color"]').content = isNight ? '#111827' : '#f4f7fb';
   try {
     localStorage.setItem('chat-theme', isNight ? 'night' : 'day');
