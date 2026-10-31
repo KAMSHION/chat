@@ -12,6 +12,8 @@ let userProfiles = new Map();
 let muteTarget = null;
 let userAvatars = {}; // 存放所有用户的头像字典 {id: base64}
 let currentLanguage = 'zh-CN';
+let replyTarget = null;
+let contextMenuMessage = null;
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 
@@ -52,6 +54,9 @@ const translations = {
   'Enter 发送 · Shift + Enter 换行': 'Enter to send · Shift + Enter for a new line',
   '发送': 'Send',
   '发送消息': 'Send message',
+  '引用': 'Quote',
+  '引用:': 'Replying to:',
+  '取消引用': 'Cancel quote',
   '极简聊窗成员': 'Chat members',
   '正在加载...': 'Loading...',
   '关闭成员列表': 'Close members list',
@@ -157,6 +162,7 @@ const translations = {
   '用户名不能超过20个字符': 'Display name cannot exceed 20 characters',
   '头像必须压缩到100KB以内': 'Avatar must be compressed to under 100 KB',
   '消息不能为空且不能超过300字': 'Message cannot be empty or exceed 300 characters',
+  '引用消息无效': 'Invalid quoted message',
   '请输入禁言理由': 'Enter a reason for the mute',
   '用户': 'User',
   '已被': 'was muted by',
@@ -174,7 +180,7 @@ function localizeText(text) {
 function applyLanguage(root = document) {
   const isEnglish = currentLanguage === 'en';
   document.documentElement.lang = isEnglish ? 'en' : 'zh-CN';
-  const excluded = '.sender-name, .content, .member-name, .notification-user, .notification-reason, #my-button-name, #my-profile-name, #user-info-name, #my-account, #user-info-account, input, textarea, script, style';
+  const excluded = '.sender-name, .content, .quoted-message, .member-name, .notification-user, .notification-reason, #my-button-name, #my-profile-name, #user-info-name, #my-account, #user-info-account, input, textarea, script, style';
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node;
   while ((node = walker.nextNode())) {
@@ -211,6 +217,9 @@ function applyLanguage(root = document) {
   document.querySelectorAll('.role-badges .user-badge[data-role]').forEach(badge => {
     badge.textContent = roleLabel(badge.dataset.role);
   });
+  if (replyTarget) {
+    document.getElementById('reply-preview-label').textContent = localizeText('引用:');
+  }
   document.querySelectorAll('.message-time[data-timestamp]').forEach(time => {
     time.textContent = formatMessageTime(Number(time.dataset.timestamp));
   });
@@ -432,6 +441,69 @@ function setRoleBadges(group, role) {
     badge.textContent = roleLabel(labelRole);
     return badge;
   }));
+}
+
+function parseMessagePayload(rawText) {
+  try {
+    const payload = JSON.parse(rawText);
+    if (
+      payload?.type === 'chat_quote_v1' &&
+      typeof payload.text === 'string' &&
+      typeof payload.quote?.display_name === 'string' &&
+      typeof payload.quote?.text === 'string'
+    ) {
+      return {
+        text: payload.text,
+        quote: {
+          displayName: payload.quote.display_name,
+          text: payload.quote.text
+        }
+      };
+    }
+  } catch {
+    // Messages predating quote support are stored as plain text.
+  }
+  return { text: rawText, quote: null };
+}
+
+function showReplyPreview(quote) {
+  replyTarget = quote;
+  document.getElementById('reply-preview-label').textContent = localizeText('引用:');
+  document.getElementById('reply-preview-text').textContent = `『${quote.displayName}: ${quote.text}』`;
+  document.getElementById('reply-preview').hidden = false;
+  document.getElementById('msg-input').focus();
+  updateComposer();
+}
+
+function clearReplyPreview() {
+  replyTarget = null;
+  document.getElementById('reply-preview').hidden = true;
+  document.getElementById('reply-preview-text').textContent = '';
+  updateComposer();
+}
+
+function closeMessageContextMenu() {
+  const menu = document.getElementById('message-context-menu');
+  menu.hidden = true;
+  contextMenuMessage = null;
+}
+
+function openMessageContextMenu(message, clientX) {
+  const content = message.querySelector('.content');
+  const author = message.querySelector('.sender-name');
+  if (!content || !author) return;
+  contextMenuMessage = {
+    displayName: author.textContent,
+    text: content.textContent
+  };
+  const menu = document.getElementById('message-context-menu');
+  menu.hidden = false;
+  const bounds = message.getBoundingClientRect();
+  const menuBounds = menu.getBoundingClientRect();
+  const left = Math.max(8, Math.min(clientX, window.innerWidth - menuBounds.width - 8));
+  const top = Math.max(8, Math.min(bounds.bottom + 4, window.innerHeight - menuBounds.height - 8));
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
 }
 
 function normalizeRole(role) {
@@ -797,14 +869,12 @@ async function showMembers() {
 
       list.appendChild(item);
     });
-    applyLanguage(list);
   } catch (error) {
     count.textContent = localizeText('成员加载失败');
     const message = document.createElement('p');
     message.className = 'members-message error';
     message.textContent = localizeText(error.message) || localizeText('请检查网络后重试。');
     list.appendChild(message);
-    applyLanguage(list);
     console.error('加载成员失败：', error);
   }
 }
@@ -853,6 +923,7 @@ async function fetchMessages() {
             document.getElementById('empty-state').hidden = true;
             return;
           }
+          const messagePayload = parseMessagePayload(msg.text);
 
           const avatarDiv = document.createElement('div');
           avatarDiv.className = 'avatar';
@@ -884,45 +955,28 @@ async function fetchMessages() {
           usernameSpan.textContent = msg.display_name;
           const isOtherUser = Number(msg.user_id) !== Number(myUserId);
           if (isOtherUser) {
-            avatarDiv.classList.add('profile-trigger');
-            avatarDiv.setAttribute('role', 'button');
-            avatarDiv.tabIndex = 0;
-            avatarDiv.setAttribute('aria-label', currentLanguage === 'en'
-              ? `View ${msg.display_name}'s profile`
-              : `查看用户${msg.display_name}的资料`);
-            avatarDiv.addEventListener('click', () => openUserInfo(msg.user_id, msg.display_name, messageRole));
-            avatarDiv.addEventListener('keydown', event => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                openUserInfo(msg.user_id, msg.display_name, messageRole);
-              }
-            });
-            usernameSpan.classList.add('profile-trigger');
-            usernameSpan.tabIndex = 0;
-            usernameSpan.setAttribute('role', 'button');
-            usernameSpan.setAttribute('aria-label', currentLanguage === 'en'
-              ? `View ${msg.display_name}'s profile`
-              : `查看用户${msg.display_name}的资料`);
-            usernameSpan.addEventListener('click', () => openUserInfo(msg.user_id, msg.display_name, messageRole));
-            usernameSpan.addEventListener('keydown', event => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                openUserInfo(msg.user_id, msg.display_name, messageRole);
-              }
-            });
+            const profile = { id: msg.user_id, display_name: msg.display_name, role: messageRole };
+            makeProfileTrigger(avatarDiv, profile);
+            makeProfileTrigger(usernameSpan, profile);
           }
           senderDiv.append(badgeDiv, usernameSpan);
 
           const contentDiv = document.createElement('div');
           contentDiv.className = 'content';
-          contentDiv.textContent = msg.text;
+          contentDiv.textContent = messagePayload.text;
+          if (messagePayload.quote) {
+            const quoteDiv = document.createElement('blockquote');
+            quoteDiv.className = 'quoted-message';
+            quoteDiv.textContent = `『${messagePayload.quote.displayName}: ${messagePayload.quote.text}』`;
+            bubbleDiv.appendChild(quoteDiv);
+          }
+          bubbleDiv.appendChild(contentDiv);
 
           const timeDiv = document.createElement('div');
           timeDiv.className = 'message-time';
           timeDiv.dataset.timestamp = msg.created_at;
           timeDiv.textContent = formatMessageTime(Number(msg.created_at));
 
-          bubbleDiv.appendChild(contentDiv);
           bodyDiv.appendChild(senderDiv);
           bodyDiv.appendChild(bubbleDiv);
           bodyDiv.appendChild(timeDiv);
@@ -938,7 +992,6 @@ async function fetchMessages() {
           msgContainer.appendChild(div);
         });
         document.getElementById('empty-state').hidden = true;
-        applyLanguage(msgContainer);
         msgContainer.scrollTop = msgContainer.scrollHeight;
       }
     } while (messagesFetchQueued);
@@ -957,12 +1010,18 @@ async function sendMessage() {
   isSendingMessage = true;
   updateComposer();
   try {
-    const res = await api('sendMessage', 'POST', { text });
+    const res = await api('sendMessage', 'POST', {
+      text,
+      quote: replyTarget
+        ? { display_name: replyTarget.displayName, text: replyTarget.text }
+        : null
+    });
     if (res.error) {
       alert(localizeText(res.error));
       return;
     }
     input.value = '';
+    clearReplyPreview();
     updateComposer();
     await fetchMessages();
   } catch (error) {
@@ -1365,6 +1424,33 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     sendMessage();
   });
+
+  const messages = document.getElementById('messages');
+  const contextMenu = document.getElementById('message-context-menu');
+  messages.addEventListener('contextmenu', event => {
+    const message = event.target.closest('.message[data-user-id]');
+    if (!message || Number(message.dataset.userId) === 0 || !message.querySelector('.content')) {
+      closeMessageContextMenu();
+      return;
+    }
+    event.preventDefault();
+    openMessageContextMenu(message, event.clientX);
+  });
+  document.getElementById('quote-message-btn').addEventListener('click', () => {
+    if (!contextMenuMessage) return;
+    showReplyPreview(contextMenuMessage);
+    closeMessageContextMenu();
+  });
+  document.getElementById('reply-cancel-btn').addEventListener('click', clearReplyPreview);
+  document.addEventListener('click', event => {
+    if (!contextMenu.contains(event.target)) closeMessageContextMenu();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeMessageContextMenu();
+  });
+  messages.addEventListener('scroll', closeMessageContextMenu);
+  window.addEventListener('resize', closeMessageContextMenu);
+  window.addEventListener('scroll', closeMessageContextMenu);
 
   document.getElementById('members-btn').addEventListener('click', showMembers);
   document.getElementById('members-close').addEventListener('click', () => membersDialog.close());

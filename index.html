@@ -85,9 +85,19 @@
           <span>发送第一条消息，开启对话吧。</span>
         </div>
       </div>
+      <div id="message-context-menu" class="message-context-menu" role="menu" hidden>
+        <button id="quote-message-btn" type="button" role="menuitem">引用</button>
+      </div>
       <form id="message-form">
         <div id="input-area">
           <div class="composer">
+            <div id="reply-preview" class="reply-preview" hidden>
+              <div class="reply-preview-content">
+                <span id="reply-preview-label">引用</span>
+                <span id="reply-preview-text"></span>
+              </div>
+              <button id="reply-cancel-btn" type="button" aria-label="取消引用">×</button>
+            </div>
             <textarea id="msg-input" placeholder="说点什么吧..." maxlength="300" aria-label="输入消息"></textarea>
             <div class="composer-footer">
               <span>Enter 发送 · Shift + Enter 换行</span>

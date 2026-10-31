@@ -230,8 +230,22 @@ export async function onRequest(context) {
     }
 
     if (action === 'sendMessage') {
-      const { text } = await request.json();
-      if (!text || text.length > 300) return json({ error: '消息不能为空且不能超过300字' }, 400);
+      const { text, quote } = await request.json();
+      const messageText = typeof text === 'string' ? text.trim() : '';
+      if (!messageText || messageText.length > 300) return json({ error: '消息不能为空且不能超过300字' }, 400);
+      let storedText = messageText;
+      if (quote !== undefined && quote !== null) {
+        const quoteName = typeof quote.display_name === 'string' ? quote.display_name.trim() : '';
+        const quoteText = typeof quote.text === 'string' ? quote.text : '';
+        if (!quoteName || quoteName.length > 20 || !quoteText || quoteText.length > 300) {
+          return json({ error: '引用消息无效' }, 400);
+        }
+        storedText = JSON.stringify({
+          type: 'chat_quote_v1',
+          quote: { display_name: quoteName, text: quoteText },
+          text: messageText
+        });
+      }
       const mute = await db.prepare("SELECT muted_until FROM user_mutes WHERE user_id = ?").bind(session.user_id).first();
       if (mute && mute.muted_until > Date.now()) {
         return json({ error: `你已被禁言，${new Date(mute.muted_until).toLocaleString('zh-CN')} 后可以发言` }, 403);
@@ -239,7 +253,7 @@ export async function onRequest(context) {
       if (mute) await db.prepare("DELETE FROM user_mutes WHERE user_id = ?").bind(session.user_id).run();
       const user = await db.prepare("SELECT display_name FROM users WHERE id = ?").bind(session.user_id).first();
       if (!user) return json({ error: '用户不存在' }, 404);
-      await db.prepare("INSERT INTO messages (user_id, display_name, text, created_at) VALUES (?, ?, ?, ?)").bind(session.user_id, user.display_name, text, Date.now()).run();
+      await db.prepare("INSERT INTO messages (user_id, display_name, text, created_at) VALUES (?, ?, ?, ?)").bind(session.user_id, user.display_name, storedText, Date.now()).run();
       await db.prepare("DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY id DESC LIMIT 50)").run();
       return json({ success: true });
     }
