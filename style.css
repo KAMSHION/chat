@@ -511,8 +511,7 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
-.member-avatar.profile-trigger:focus-visible,
-.member-name.profile-trigger:focus-visible {
+.member-avatar.profile-trigger:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
 }
@@ -529,20 +528,6 @@ textarea:focus-visible {
   font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.member-name.profile-trigger {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-}
-
-.member-name.profile-trigger:hover {
-  color: var(--blue);
-  text-decoration: underline;
-  text-underline-offset: 2px;
 }
 
 .member-identity {
@@ -1217,22 +1202,7 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
-.sender-name.profile-trigger {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-}
-
-.sender-name.profile-trigger:hover {
-  color: var(--blue);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.message .avatar.profile-trigger:focus-visible,
-.sender-name.profile-trigger:focus-visible {
+.message .avatar.profile-trigger:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
 }

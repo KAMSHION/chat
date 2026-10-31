@@ -824,7 +824,6 @@ async function showMembers() {
       const displayName = document.createElement('span');
       displayName.className = 'member-name';
       displayName.textContent = user.display_name;
-      makeProfileTrigger(displayName, user);
 
       const identity = document.createElement('div');
       identity.className = 'member-identity';
@@ -957,7 +956,6 @@ async function fetchMessages() {
           if (isOtherUser) {
             const profile = { id: msg.user_id, display_name: msg.display_name, role: messageRole };
             makeProfileTrigger(avatarDiv, profile);
-            makeProfileTrigger(usernameSpan, profile);
           }
           senderDiv.append(badgeDiv, usernameSpan);
 
