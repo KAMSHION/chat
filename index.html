@@ -121,21 +121,25 @@
         <button id="my-dialog-close" type="button" aria-label="关闭">×</button>
       </div>
       <div class="my-profile">
-        <button id="my-profile-avatar" class="my-profile-avatar" type="button" aria-label="点击更改头像">
-          <span id="my-profile-avatar-image" class="my-profile-avatar-image"></span>
-          <span class="my-profile-avatar-edit" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
-          </span>
-        </button>
-        <input type="file" id="avatar-input" accept="image/*" aria-label="选择头像" hidden onchange="uploadAvatar(this)">
-        <div class="my-profile-name-row">
-          <strong id="my-profile-name"></strong>
-          <button id="my-name-edit-btn" class="icon-button" type="button" aria-label="更改用户名">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+        <div class="my-profile-identity">
+          <button id="my-profile-avatar" class="my-profile-avatar" type="button" aria-label="点击更改头像">
+            <span id="my-profile-avatar-image" class="my-profile-avatar-image"></span>
+            <span class="my-profile-avatar-edit" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+            </span>
           </button>
-          <span id="my-profile-role" class="role-badges"></span>
+          <div class="my-profile-details">
+            <div class="my-profile-name-row">
+              <strong id="my-profile-name"></strong>
+              <button id="my-name-edit-btn" class="icon-button" type="button" aria-label="更改用户名">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+              </button>
+            </div>
+            <div class="my-profile-role-row"><span id="my-profile-role" class="role-badges"></span></div>
+            <p class="my-account-line">账户名：<span id="my-account"></span></p>
+          </div>
         </div>
-        <p class="my-account-line">账户名：<span id="my-account"></span></p>
+        <input type="file" id="avatar-input" accept="image/*" aria-label="选择头像" hidden onchange="uploadAvatar(this)">
         <form id="my-name-edit-form" class="my-name-edit-form" hidden>
           <label for="my-name-input">新用户名</label>
           <input id="my-name-input" type="text" maxlength="20" autocomplete="nickname" required>

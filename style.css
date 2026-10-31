@@ -703,14 +703,54 @@ textarea:focus-visible {
 }
 
 #my-dialog .my-profile {
+  align-items: stretch;
+  gap: 0;
   max-height: min(520px, calc(80vh - 70px));
+  padding: 22px;
   overflow-y: auto;
+}
+
+#my-dialog .my-profile-identity {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#my-dialog .my-profile-avatar {
+  width: 84px;
+  height: 84px;
+  flex: 0 0 84px;
+  border-radius: 20px;
+  font-size: 28px;
+}
+
+.my-profile-details {
+  min-width: 0;
+  flex: 1;
+}
+
+#my-dialog .my-profile-name-row {
+  margin-top: 0;
+  gap: 4px;
+}
+
+#my-dialog .my-profile-name-row strong {
+  max-width: 190px;
+}
+
+.my-profile-role-row {
+  margin-top: 2px;
+}
+
+#my-dialog .my-account-line {
+  margin-top: 7px;
 }
 
 .my-preferences {
   width: 100%;
-  margin-top: 20px;
-  padding-top: 16px;
+  margin-top: 18px;
+  padding-top: 14px;
   border-top: 1px solid #edf0f5;
 }
 
@@ -747,8 +787,8 @@ textarea:focus-visible {
 
 .my-profile-actions {
   width: 100%;
-  margin-top: 22px;
-  padding-top: 18px;
+  margin-top: 18px;
+  padding-top: 14px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;

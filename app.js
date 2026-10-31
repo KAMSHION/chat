@@ -91,6 +91,7 @@ const translations = {
   '超管': 'Owner',
   '管理': 'Admin',
   'AI': 'AI',
+  'Lv.1': 'User',
   '在线': 'Online',
   '离线': 'Offline',
   '暂无成员': 'No members',
@@ -388,10 +389,10 @@ function showLoginPage(message = '', isSuccess = false) {
 }
 
 function roleLabel(role) {
-  if (role === 'super_admin') return '超管';
-  if (role === 'admin') return '管理';
+  if (role === 'super_admin') return currentLanguage === 'en' ? 'Owner' : '超管';
+  if (role === 'admin') return currentLanguage === 'en' ? 'Admin' : '管理';
   if (role === 'ai') return 'AI';
-  return 'Lv.1';
+  return currentLanguage === 'en' ? 'User' : 'Lv.1';
 }
 
 function roleLabels(role) {
