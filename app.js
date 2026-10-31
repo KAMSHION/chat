@@ -368,7 +368,20 @@ async function login() {
       applyLanguage();
       document.getElementById('auth-panel').style.display = 'none';
       document.getElementById('register-panel').hidden = true;
-      document.getElementById('chat-panel').style.display = 'flex';
+      const chatPanel = document.getElementById('chat-panel');
+      chatPanel.style.display = 'flex';
+      requestAnimationFrame(() => {
+        chatPanel.classList.remove('chat-panel-entering');
+        void chatPanel.offsetWidth;
+        chatPanel.classList.add('chat-panel-entering');
+      });
+      const finishEntryAnimation = event => {
+        if (event.animationName === 'chat-panel-enter') {
+          chatPanel.classList.remove('chat-panel-entering');
+          chatPanel.removeEventListener('animationend', finishEntryAnimation);
+        }
+      };
+      chatPanel.addEventListener('animationend', finishEntryAnimation);
       startChat();
     }
   } catch (error) {
