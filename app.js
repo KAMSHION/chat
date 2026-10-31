@@ -208,6 +208,9 @@ function applyLanguage(root = document) {
     languageButton.textContent = isEnglish ? '中文' : 'English';
     languageButton.setAttribute('aria-label', isEnglish ? 'Switch to Chinese' : '切换到英文');
   });
+  document.querySelectorAll('.role-badges .user-badge[data-role]').forEach(badge => {
+    badge.textContent = roleLabel(badge.dataset.role);
+  });
   document.querySelectorAll('.message-time[data-timestamp]').forEach(time => {
     time.textContent = formatMessageTime(Number(time.dataset.timestamp));
   });
@@ -412,6 +415,7 @@ function setRoleBadges(group, role) {
   group.replaceChildren(...roleLabels(role).map(labelRole => {
     const badge = document.createElement('span');
     badge.className = `user-badge${labelRole === 'super_admin' ? ' super-admin' : labelRole === 'admin' ? ' administrator' : labelRole === 'ai' ? ' ai' : ''}`;
+    badge.dataset.role = labelRole;
     badge.textContent = roleLabel(labelRole);
     return badge;
   }));

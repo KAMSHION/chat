@@ -706,23 +706,28 @@ textarea:focus-visible {
   align-items: stretch;
   gap: 0;
   max-height: min(520px, calc(80vh - 70px));
-  padding: 22px;
+  padding: 20px;
   overflow-y: auto;
 }
 
 #my-dialog .my-profile-identity {
   width: 100%;
+  min-height: 116px;
+  padding: 16px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 15px;
+  border: 1px solid #edf0f5;
+  border-radius: 16px;
+  background: #fafbfe;
 }
 
 #my-dialog .my-profile-avatar {
-  width: 84px;
-  height: 84px;
-  flex: 0 0 84px;
-  border-radius: 20px;
-  font-size: 28px;
+  width: 76px;
+  height: 76px;
+  flex: 0 0 76px;
+  border-radius: 18px;
+  font-size: 26px;
 }
 
 .my-profile-details {
@@ -737,27 +742,31 @@ textarea:focus-visible {
 
 #my-dialog .my-profile-name-row strong {
   max-width: 190px;
+  font-size: 17px;
 }
 
 .my-profile-role-row {
-  margin-top: 2px;
+  margin-top: 5px;
 }
 
 #my-dialog .my-account-line {
-  margin-top: 7px;
+  margin-top: 8px;
+  font-size: 12px;
 }
 
 .my-preferences {
   width: 100%;
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid #edf0f5;
+  margin-top: 16px;
+  padding: 15px;
+  border: 1px solid #edf0f5;
+  border-radius: 14px;
+  background: #fff;
 }
 
 .my-preferences h3 {
-  margin: 0 0 10px;
-  color: #69758b;
-  font-size: 12px;
+  margin: 0 0 12px;
+  color: #46516a;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -787,8 +796,8 @@ textarea:focus-visible {
 
 .my-profile-actions {
   width: 100%;
-  margin-top: 18px;
-  padding-top: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -1849,10 +1858,11 @@ html[data-theme="night"] .my-name-edit-form input {
 
 html[data-theme="night"] .my-preferences {
   border-color: #303a4b;
+  background: #1b2432;
 }
 
 html[data-theme="night"] .my-preferences h3 {
-  color: #9ca8bb;
+  color: #d2d9e6;
 }
 
 html[data-theme="night"] .my-preference-actions button {
@@ -1867,6 +1877,11 @@ html[data-theme="night"] .my-preference-actions button:hover {
 
 html[data-theme="night"] .my-profile-actions {
   border-color: #303a4b;
+}
+
+html[data-theme="night"] #my-dialog .my-profile-identity {
+  border-color: #303a4b;
+  background: #151d29;
 }
 
 html[data-theme="night"] .my-profile-actions button {
