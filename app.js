@@ -1063,6 +1063,7 @@ async function muteMember(event) {
       ? `Muted ${res.displayName} for ${durationMinutes} min`
       : `已将${res.displayName}禁言 ${durationMinutes} 分钟`;
     message.classList.add('success');
+    muteTarget.muted_until = res.mutedUntil;
     const member = document.querySelector(`.member-item[data-user-id="${res.userId}"]`);
     if (member) {
       let state = member.querySelector('.member-mute-state');
@@ -1119,6 +1120,7 @@ async function unmuteMember() {
       ? `${res.displayName} was unmuted`
       : `${res.displayName}已解除禁言`;
     message.classList.add('success');
+    muteTarget.muted_until = 0;
     const member = document.querySelector(`.member-item[data-user-id="${res.userId}"]`);
     if (member) {
       member.querySelector('.member-mute-state')?.remove();
