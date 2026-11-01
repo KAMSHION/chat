@@ -1,0 +1,15 @@
+UPDATE users
+SET role = 'super_admin'
+WHERE account = 'username';
+
+UPDATE users
+SET role = 'admin'
+WHERE account = 'username';
+
+UPDATE users
+SET role = 'ai'
+WHERE account = 'username';
+
+UPDATE users
+SET role = 'ai_admin'
+WHERE account = 'username';
