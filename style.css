@@ -1420,6 +1420,16 @@ textarea:focus-visible {
   white-space: pre-wrap;
 }
 
+.message .mention-highlight {
+  padding: 1px 3px;
+  border-radius: 5px;
+  color: #435cc8;
+  background: rgba(82, 109, 229, .12);
+  font-weight: 650;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
 .message-time {
   margin: 5px 3px 0;
   color: #9aa2b2;
@@ -2012,6 +2022,11 @@ html[data-theme="night"] .message.mine .bubble {
 
 html[data-theme="night"] .message .content {
   color: #e0e6f0;
+}
+
+html[data-theme="night"] .message .mention-highlight {
+  color: #c0caff;
+  background: rgba(114, 132, 213, .24);
 }
 
 html[data-theme="night"] .message .sender,

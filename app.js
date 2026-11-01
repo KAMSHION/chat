@@ -852,6 +852,27 @@ function parseMessagePayload(rawText) {
   return { text: rawText, quote: null };
 }
 
+function renderMessageContent(element, text) {
+  const mentionPattern = /@[^\s@]+/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = mentionPattern.exec(text))) {
+    if (match.index > lastIndex) {
+      element.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    }
+    const mention = document.createElement('span');
+    mention.className = 'mention-highlight';
+    mention.textContent = match[0];
+    element.appendChild(mention);
+    lastIndex = mentionPattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    element.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+}
+
 function showReplyPreview(quote) {
   replyTarget = quote;
   document.getElementById('reply-preview-label').textContent = localizeText('引用:');
@@ -1347,7 +1368,7 @@ async function fetchMessages() {
 
           const contentDiv = document.createElement('div');
           contentDiv.className = 'content';
-          contentDiv.textContent = messagePayload.text;
+          renderMessageContent(contentDiv, messagePayload.text);
           if (messagePayload.quote) {
             const quoteDiv = document.createElement('blockquote');
             quoteDiv.className = 'quoted-message';
@@ -2029,7 +2050,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
-          insertMention(mentionFilteredUsers[mentionActiveIndex]);
+          mentionActiveIndex = 0;
+          updateMentionSuggestions();
+          insertMention(mentionFilteredUsers[0]);
           return;
         }
       }
