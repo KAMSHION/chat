@@ -1224,9 +1224,11 @@ textarea:focus-visible {
 
 .quoted-message {
   max-width: 100%;
+  max-height: 4.35em;
   margin: 0 0 8px;
   padding: 6px 9px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   border-left: 2px solid #98a7ee;
   border-radius: 0 7px 7px 0;
   color: #707c99;
@@ -1235,9 +1237,26 @@ textarea:focus-visible {
   line-height: 1.45;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  scrollbar-color: rgba(113, 130, 197, .55) transparent;
+  scrollbar-width: thin;
+}
+
+.quoted-message::-webkit-scrollbar {
+  width: 5px;
+}
+
+.quoted-message::-webkit-scrollbar-track {
+  margin: 4px 0;
+  background: transparent;
+}
+
+.quoted-message::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: rgba(113, 130, 197, .45);
+}
+
+.quoted-message::-webkit-scrollbar-thumb:hover {
+  background: rgba(89, 108, 183, .7);
 }
 
 .message.mine .quoted-message {
@@ -1791,6 +1810,15 @@ html[data-theme="night"] .quoted-message {
   border-left-color: #7889df;
   color: #b1bdd2;
   background: rgba(114, 132, 213, .13);
+  scrollbar-color: rgba(142, 157, 224, .6) transparent;
+}
+
+html[data-theme="night"] .quoted-message::-webkit-scrollbar-thumb {
+  background: rgba(142, 157, 224, .5);
+}
+
+html[data-theme="night"] .quoted-message::-webkit-scrollbar-thumb:hover {
+  background: rgba(165, 178, 240, .75);
 }
 
 html[data-theme="night"] .message.mine .quoted-message {

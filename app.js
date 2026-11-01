@@ -30,6 +30,7 @@ const translations = {
   '请使用账户名登录': 'Please log in with your account name',
   '支持或改编这个项目？': 'Support or adapt this project?',
   '给 GitHub 仓库点个 Star': 'Star the GitHub repository',
+  '反馈 BUG 和学习交流': 'Report bugs and learn together',
   '创建账号': 'Create account',
   '设置登录账户名和聊天室显示名称。': 'Set your login account name and chat display name.',
   '账户名（唯一）': 'Account name (unique)',
