@@ -70,13 +70,33 @@ textarea:focus-visible {
 }
 
 .project-support a {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 3px 7px;
   border-radius: 7px;
   color: #526de5;
   font-weight: 500;
   text-decoration: none;
   transition: color .15s, background .15s, border-color .15s;
+}
+
+.project-support .support-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  fill: currentColor;
+}
+
+.project-support .github-icon {
+  color: #24292f;
+}
+
+.project-support .bilibili-icon {
+  width: 17px;
+  height: 17px;
+  flex-basis: 17px;
+  color: #00a1d6;
 }
 
 .project-support a:hover {
@@ -1795,6 +1815,14 @@ html[data-theme="night"] .project-support {
 
 html[data-theme="night"] .project-support a {
   color: #aebaff;
+}
+
+html[data-theme="night"] .project-support .github-icon {
+  color: #f0f6fc;
+}
+
+html[data-theme="night"] .project-support .bilibili-icon {
+  color: #23b6e6;
 }
 
 html[data-theme="night"] .project-support a:hover {

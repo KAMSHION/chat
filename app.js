@@ -265,7 +265,6 @@ const localeTranslations = {
     '理由': '理由',
     '请填写禁言理由': 'ミュートの理由を入力してください',
     '确认': '確認',
-    '解除禁言': 'ミュート解除',
     '在线': 'オンライン',
     '离线': 'オフライン',
     '暂无成员': 'メンバーはいません',
@@ -439,7 +438,6 @@ const localeTranslations = {
     '理由': '原因',
     '请填写禁言理由': '請填寫禁言原因',
     '确认': '確認',
-    '解除禁言': '解除禁言',
     '在线': '在線上',
     '离线': '離線',
     '暂无成员': '目前沒有成員',
@@ -530,30 +528,47 @@ const localeTranslations = {
   }
 };
 const reverseTranslations = Object.fromEntries(
-  Object.entries(localeTranslations).flatMap(([, dictionary]) =>
-    Object.entries(dictionary).map(([source, translated]) => [translated, source])
-  )
+  Object.entries(localeTranslations).map(([language, dictionary]) => [
+    language,
+    Object.fromEntries(Object.entries(dictionary).map(([source, translated]) => [translated, source]))
+  ])
 );
+const simplifiedChineseTemplates = {
+  'Muted {name} for {minutes} min': '已将{name}禁言 {minutes} 分钟',
+  'Profile of {name}': '用户{name}的个人资料',
+  'Mute {name}': '将用户{name}禁言',
+  'Mute {name} for (min)': '禁言用户{name}，时长（min）',
+  'Unmute {name}': '解除用户{name}的禁言',
+  'Unmute {name}?': '确认解除{name}的禁言吗？',
+  "View {name}'s profile": '查看用户{name}的资料',
+  '{name} was unmuted': '{name}已解除禁言',
+  '{count} member': '共 {count} 位成员',
+  '{count} members': '共 {count} 位成员'
+};
+const messageTimeFormatters = {
+  'zh-CN': new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+  en: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+  ja: new Intl.DateTimeFormat('ja-JP', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+  'zh-TW': new Intl.DateTimeFormat('zh-TW', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+};
+
+function sourceText(text) {
+  if (Object.prototype.hasOwnProperty.call(translations, text)) return text;
+  const currentDictionary = reverseTranslations[currentLanguage];
+  if (Object.prototype.hasOwnProperty.call(currentDictionary, text)) return currentDictionary[text];
+  for (const dictionary of Object.values(reverseTranslations)) {
+    if (Object.prototype.hasOwnProperty.call(dictionary, text)) return dictionary[text];
+  }
+  return text;
+}
 
 function localizeText(text) {
-  const source = reverseTranslations[text] || text;
+  const source = sourceText(text);
   if (currentLanguage === 'zh-CN') return source;
   return localeTranslations[currentLanguage]?.[source] || translations[source] || source;
 }
 
 function localizeFormat(template, values) {
-  const simplifiedChineseTemplates = {
-    'Muted {name} for {minutes} min': '已将{name}禁言 {minutes} 分钟',
-    'Profile of {name}': '用户{name}的个人资料',
-    'Mute {name}': '将用户{name}禁言',
-    'Mute {name} for (min)': '禁言用户{name}，时长（min）',
-    'Unmute {name}': '解除用户{name}的禁言',
-    'Unmute {name}?': '确认解除{name}的禁言吗？',
-    "View {name}'s profile": '查看用户{name}的资料',
-    '{name} was unmuted': '{name}已解除禁言',
-    '{count} member': '共 {count} 位成员',
-    '{count} members': '共 {count} 位成员'
-  };
   const localized = currentLanguage === 'zh-CN'
     ? simplifiedChineseTemplates[template] || template
     : localizeText(template);
@@ -572,8 +587,7 @@ function applyLanguage(root = document) {
     if (!originalTextNodes.has(node)) originalTextNodes.set(node, node.nodeValue);
     const original = originalTextNodes.get(node);
     const trimmed = original.trim();
-    const source = reverseTranslations[trimmed] || trimmed;
-    const translated = localizeText(source);
+    const translated = localizeText(trimmed);
     const leading = original.match(/^\s*/)[0];
     const trailing = original.match(/\s*$/)[0];
     const localizedValue = `${leading}${translated}${trailing}`;
@@ -589,8 +603,7 @@ function applyLanguage(root = document) {
       }
       if (!(attribute in originals)) originals[attribute] = element.getAttribute(attribute);
       const original = originals[attribute];
-      const source = reverseTranslations[original] || original;
-      const translated = localizeText(source);
+      const translated = localizeText(original);
       if (element.getAttribute(attribute) !== translated) element.setAttribute(attribute, translated);
     });
   });
@@ -625,21 +638,10 @@ function formatMessageTime(timestamp) {
 
 function formatLocalizedDateTime(timestamp) {
   const date = new Date(timestamp);
-  if (currentLanguage !== 'zh-CN') {
-    const locale = currentLanguage === 'en' ? 'en-US'
-      : currentLanguage === 'ja' ? 'ja-JP' : 'zh-TW';
-    return new Intl.DateTimeFormat(locale, {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    }).format(date);
-  }
-  const time = new Intl.DateTimeFormat('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
-  return `${date.getMonth() + 1}月${date.getDate()}日 ${time}`;
+  const time = messageTimeFormatters[currentLanguage].format(date);
+  return currentLanguage === 'zh-CN'
+    ? `${date.getMonth() + 1}月${date.getDate()}日 ${time}`
+    : time;
 }
 
 function refreshLocalizedDetails() {
