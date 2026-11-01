@@ -28,9 +28,11 @@
       </form>
       <p class="auth-footnote">请使用账户名登录</p>
       <footer class="project-support">
-        支持或改编这个项目？<a href="https://github.com/KAMSHION/chat" target="_blank" rel="noopener noreferrer">给 GitHub 仓库点个 Star</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://space.bilibili.com/3546907207011146" target="_blank" rel="noopener noreferrer">反馈 BUG 和学习交流</a>
+        <span>支持或改编这个项目？</span>
+        <span class="project-support-links">
+          <a href="https://github.com/KAMSHION/chat" target="_blank" rel="noopener noreferrer">给 GitHub 仓库点个 Star</a>
+          <a href="https://space.bilibili.com/3546907207011146" target="_blank" rel="noopener noreferrer">B站反馈 · 学习交流</a>
+        </span>
       </footer>
     </section>
 
@@ -92,7 +94,11 @@
       </div>
       <form id="message-form">
         <div id="input-area">
+          <button id="mention-toggle" class="mention-toggle" type="button" aria-label="提及用户" title="提及用户">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16.5 8.5v5a2.5 2.5 0 0 0 5 0v-2a9.5 9.5 0 1 0-3.1 7.05"/><circle cx="11" cy="12" r="4.5"/><path d="M15.5 12v1.5"/></svg>
+          </button>
           <div class="composer">
+            <div id="mention-picker" class="mention-picker" role="listbox" aria-label="提及用户" hidden></div>
             <div id="reply-preview" class="reply-preview" hidden>
               <div class="reply-preview-content">
                 <span id="reply-preview-label">引用</span>
@@ -100,7 +106,7 @@
               </div>
               <button id="reply-cancel-btn" type="button" aria-label="取消引用">×</button>
             </div>
-            <textarea id="msg-input" placeholder="说点什么吧..." maxlength="300" aria-label="输入消息"></textarea>
+            <textarea id="msg-input" placeholder="说点什么吧..." maxlength="300" aria-label="输入消息" aria-controls="mention-picker" aria-autocomplete="list" aria-expanded="false"></textarea>
             <div class="composer-footer">
               <span>Enter 发送 · Shift + Enter 换行</span>
               <span id="char-count">0 / 300</span>
@@ -165,13 +171,30 @@
           <h3 id="my-preferences-title">显示偏好</h3>
           <div class="my-preference-actions">
             <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">切换到极夜</button>
-            <button id="language-toggle" class="language-toggle" type="button" aria-label="切换到英文">English</button>
+            <button id="language-toggle" class="language-toggle" type="button" aria-label="选择语言" aria-haspopup="dialog" aria-controls="language-dialog">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+            </button>
           </div>
         </section>
         <div class="my-profile-actions">
           <button id="change-password-btn" class="secondary-btn" type="button">修改密码</button>
           <button id="my-logout-btn" class="secondary-btn" type="button">退出登录</button>
         </div>
+      </div>
+    </dialog>
+
+    <dialog id="language-dialog" aria-labelledby="language-dialog-title">
+      <div class="members-dialog-header">
+        <div>
+          <h2 id="language-dialog-title">选择语言</h2>
+        </div>
+        <button id="language-dialog-close" type="button" aria-label="关闭">×</button>
+      </div>
+      <div id="language-picker" class="language-picker" role="group" aria-label="选择语言">
+        <button type="button" data-language="zh-CN" lang="zh-CN">简体中文</button>
+        <button type="button" data-language="en" lang="en">English</button>
+        <button type="button" data-language="ja" lang="ja">日本語</button>
+        <button type="button" data-language="zh-TW" lang="zh-TW">繁體中文</button>
       </div>
     </dialog>
 

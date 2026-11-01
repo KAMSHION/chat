@@ -14,6 +14,9 @@ let userAvatars = {}; // 存放所有用户的头像字典 {id: base64}
 let currentLanguage = 'zh-CN';
 let replyTarget = null;
 let contextMenuMessage = null;
+let mentionStartIndex = -1;
+let mentionActiveIndex = 0;
+let mentionFilteredUsers = [];
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 
@@ -30,7 +33,7 @@ const translations = {
   '请使用账户名登录': 'Please log in with your account name',
   '支持或改编这个项目？': 'Support or adapt this project?',
   '给 GitHub 仓库点个 Star': 'Star the GitHub repository',
-  '反馈 BUG 和学习交流': 'Report bugs and learn together',
+  'B站反馈 · 学习交流': 'Bilibili · Feedback & learning',
   '创建账号': 'Create account',
   '设置登录账户名和聊天室显示名称。': 'Set your login account name and chat display name.',
   '账户名（唯一）': 'Account name (unique)',
@@ -64,6 +67,10 @@ const translations = {
   '我的': 'My Profile',
   '管理你的个人资料': 'Manage your profile',
   '显示偏好': 'Display preferences',
+  '选择语言': 'Select language',
+  '提及用户': 'Mention a user',
+  '没有匹配的用户': 'No matching users',
+  '消息长度不足，无法添加提及': 'Not enough room to add a mention',
   '关闭': 'Close',
   '点击更改头像': 'Click to change your avatar',
   '选择头像': 'Choose an avatar',
@@ -170,18 +177,394 @@ const translations = {
   '的禁言已被': 'was unmuted by',
   '禁言失败': 'Mute failed'
 };
+const localeTranslations = {
+  'zh-CN': {},
+  en: translations,
+  ja: {
+    '[通知]': '[通知]',
+    ' 用户': ' ユーザー',
+    '已被 ': 'によってミュートされました: ',
+    '的禁言已被 ': 'のミュートが解除されました: ',
+    '，理由：': '、理由：',
+    '解除禁言': 'ミュート解除',
+    '禁言至 ': 'ミュート期限：',
+    '将用户禁言': 'ユーザーをミュート',
+    '禁言用户，时长（min）': 'ミュート時間（分）',
+    '确认解除该成员的禁言吗？': 'このメンバーのミュートを解除しますか？',
+    '极简聊窗': 'シンプルチャット',
+    '登录后加入对话，和大家分享此刻。': 'ログインして会話に参加し、今この瞬間を共有しましょう。',
+    '账户名': 'アカウント名',
+    '消息长度不足，无法添加提及': 'メッセージの文字数上限によりメンションを追加できません',
+    '请输入账户名': 'アカウント名を入力',
+    '密码': 'パスワード',
+    '请输入密码': 'パスワードを入力',
+    '登录': 'ログイン',
+    '注册新账号': '新規登録',
+    '请使用账户名登录': 'アカウント名でログインしてください',
+    '支持或改编这个项目？': 'このプロジェクトを応援・改変しますか？',
+    '给 GitHub 仓库点个 Star': 'GitHubでStarを付ける',
+    'B站反馈 · 学习交流': 'Bilibili · バグ報告・学習交流',
+    '创建账号': 'アカウント作成',
+    '设置登录账户名和聊天室显示名称。': 'ログイン名とチャットで表示する名前を設定します。',
+    '账户名（唯一）': 'アカウント名（重複不可）',
+    '用于登录，不能与他人重复': 'ログインに使用します。他のユーザーと重複できません',
+    '用户名（对外展示）': '表示名',
+    '其他成员看到的名称': '他のメンバーに表示される名前',
+    '确认密码': 'パスワード確認',
+    '请再次输入密码': 'パスワードを再入力',
+    '返回登录': 'ログインに戻る',
+    '确认注册': '登録する',
+    '正在连接...': '接続中...',
+    '人在线': '人がオンライン',
+    '成员': 'メンバー',
+    '切换到极夜': 'ダークモードに切替',
+    '切换到白昼': 'ライトモードに切替',
+    '打开我的资料': 'プロフィールを開く',
+    '聊天消息': 'チャットメッセージ',
+    '这里暂时还没有消息': 'メッセージはまだありません',
+    '发送第一条消息，开启对话吧。': '最初のメッセージを送って会話を始めましょう。',
+    '说点什么吧...': 'メッセージを入力...',
+    '输入消息': 'メッセージを入力',
+    'Enter 发送 · Shift + Enter 换行': 'Enterで送信 · Shift + Enterで改行',
+    '发送': '送信',
+    '发送消息': 'メッセージを送信',
+    '引用': '引用',
+    '引用:': '返信先:',
+    '取消引用': '引用を取り消す',
+    '提及用户': 'ユーザーにメンション',
+    '没有匹配的用户': '該当するユーザーはいません',
+    '选择语言': '言語を選択',
+    '显示偏好': '表示設定',
+    '极夜': 'ダーク',
+    '白昼': 'ライト',
+    '简体中文': '簡体字中国語',
+    '日本語': '日本語',
+    '繁體中文': '繁体字中国語',
+    '极简聊窗成员': 'シンプルチャットのメンバー',
+    '正在加载...': '読み込み中...',
+    '关闭成员列表': 'メンバー一覧を閉じる',
+    '我的': 'マイプロフィール',
+    '管理你的个人资料': 'プロフィールを管理',
+    '关闭': '閉じる',
+    '点击更改头像': 'クリックしてアバターを変更',
+    '选择头像': 'アバターを選択',
+    '更改用户名': '表示名を変更',
+    '账户名：': 'アカウント名：',
+    '新用户名': '新しい表示名',
+    '取消': 'キャンセル',
+    '保存': '保存',
+    '修改密码': 'パスワード変更',
+    '退出登录': 'ログアウト',
+    '请先验证当前密码': '現在のパスワードを確認してください',
+    '当前密码': '現在のパスワード',
+    '新密码': '新しいパスワード',
+    '确认新密码': '新しいパスワードを確認',
+    '确认修改': '変更を確定',
+    '用户信息': 'ユーザー情報',
+    '设置禁言时长，单位为分钟': 'ミュート時間を分単位で設定',
+    '理由': '理由',
+    '请填写禁言理由': 'ミュートの理由を入力してください',
+    '确认': '確認',
+    '解除禁言': 'ミュート解除',
+    '在线': 'オンライン',
+    '离线': 'オフライン',
+    '暂无成员': 'メンバーはいません',
+    '成员加载失败': 'メンバーの読み込みに失敗しました',
+    '未知用户': '不明なユーザー',
+    '禁言': 'ミュート',
+    '解除': '解除',
+    '图片处理失败': '画像処理に失敗しました',
+    '发送失败，请检查网络后重试。': '送信に失敗しました。ネットワークを確認して再試行してください。',
+    '用户名不能为空': '表示名を入力してください',
+    '用户名已更新': '表示名を更新しました',
+    '更新失败，请检查网络后重试。': '更新に失敗しました。ネットワークを確認して再試行してください。',
+    '请输入大于0的整数分钟': '1以上の整数で分数を入力してください',
+    '禁言失败，请检查网络后重试。': 'ミュートに失敗しました。ネットワークを確認して再試行してください。',
+    '解除禁言失败，请检查网络后重试。': 'ミュート解除に失敗しました。ネットワークを確認して再試行してください。',
+    '头像更新成功！': 'アバターを更新しました。',
+    '无法处理这张图片': 'この画像を処理できません',
+    '图片压缩失败': '画像の圧縮に失敗しました',
+    '退出登录失败，请重试。': 'ログアウトに失敗しました。再試行してください。',
+    '请完整填写所有密码': 'すべてのパスワード欄を入力してください',
+    '两次输入的新密码不一致': '新しいパスワードが一致しません',
+    '密码修改成功': 'パスワードを変更しました',
+    '修改失败，请检查网络后重试。': '変更に失敗しました。ネットワークを確認して再試行してください。',
+    '请填写账户名和密码': 'アカウント名とパスワードを入力してください',
+    '请完整填写所有信息': 'すべての項目を入力してください',
+    '两次输入的密码不一致': 'パスワードが一致しません',
+    '注册成功，请使用账户名登录。': '登録しました。アカウント名でログインしてください。',
+    '暂时无法连接服务器，请稍后重试。': 'サーバーに接続できません。しばらくしてから再試行してください。',
+    '连接异常': '接続エラー',
+    '加载成员失败': 'メンバーの読み込みに失敗しました',
+    '请检查网络后重试。': 'ネットワークを確認して再試行してください。',
+    '用户不存在': 'ユーザーが見つかりません',
+    '未登录': 'ログインしていません',
+    '会话已过期，请重新登录': 'セッションの有効期限が切れました。再度ログインしてください',
+    '账户名或密码错误': 'アカウント名またはパスワードが正しくありません',
+    '账户名已存在': 'このアカウント名は既に使用されています',
+    '注册名额已满(100人)': '登録上限（100人）に達しました',
+    '当前密码不正确': '現在のパスワードが正しくありません',
+    '没有禁言权限': 'ミュートする権限がありません',
+    '没有解除禁言权限': 'ミュートを解除する権限がありません',
+    '禁言理由不能为空': 'ミュートの理由を入力してください',
+    '不能禁言超管': 'オーナーをミュートできません',
+    '该成员当前未被禁言': 'このメンバーはミュートされていません',
+    '消息不能为空且不能超过300字': 'メッセージは空欄にできず、300文字以内です',
+    '引用消息无效': '引用メッセージが無効です',
+    '用户': 'ユーザー',
+    '超管': 'オーナー',
+    '管理': '管理者',
+    'Lv.1': 'ユーザー',
+    'Muted {name} for {minutes} min': '{name}を{minutes}分間ミュートしました',
+    'Profile of {name}': '{name}のプロフィール',
+    'Mute {name}': '{name}をミュート',
+    'Mute {name} for (min)': '{name}のミュート時間（分）',
+    'Unmute {name}': '{name}のミュートを解除',
+    'Unmute {name}?': '{name}のミュートを解除しますか？',
+    "View {name}'s profile": '{name}のプロフィールを表示',
+    '{name} was unmuted': '{name}のミュートを解除しました',
+    '{count} member': '{count}人のメンバー',
+    '{count} members': '{count}人のメンバー',
+    '共 {count} 位成员': '{count}人のメンバー',
+    '账户名只能包含大小写英文字母、数字、下划线和美元符号（$）': 'アカウント名には英字、数字、アンダースコア、ドル記号（$）のみ使用できます',
+    '输入分钟数（min）': '分数を入力',
+    'AI': 'AI',
+    '已将': 'ミュートしました：',
+    ' 分钟': ' 分',
+    '已解除禁言': 'のミュートを解除しました',
+    '上传失败：': 'アップロード失敗：',
+    '压缩后的图片读取失败': '圧縮画像の読み込みに失敗しました',
+    '图片无法压缩到100KB以内，请选择较小的图片': '画像を100 KB未満に圧縮できません。小さい画像を選んでください',
+    '账户名、用户名和密码不能为空': 'アカウント名、表示名、パスワードを入力してください',
+    '账户名最多30个字符，用户名最多20个字符': 'アカウント名は30文字以内、表示名は20文字以内です',
+    '请完整填写当前密码和新密码': '現在と新しいパスワードを入力してください',
+    '新密码不能超过128个字符': '新しいパスワードは128文字以内です',
+    '成员无效': '無効なメンバーです',
+    '禁言时长必须是大于0的整数分钟': 'ミュート時間は1分以上の整数にしてください',
+    '禁言理由不能超过200个字符': 'ミュート理由は200文字以内です',
+    '禁言时长过长': 'ミュート時間が長すぎます',
+    '成员不存在': 'メンバーが見つかりません',
+    '管理只能禁言普通用户或AI用户': '管理者は一般ユーザーまたはAIユーザーのみミュートできます',
+    '管理只能解除普通用户或AI用户的禁言': '管理者は一般ユーザーまたはAIユーザーのみミュート解除できます',
+    '不能解除超管的禁言': 'オーナーのミュートを解除できません',
+    '用户名不能超过20个字符': '表示名は20文字以内です',
+    '头像必须压缩到100KB以内': 'アバターは100 KB未満に圧縮してください',
+    '请输入禁言理由': 'ミュートの理由を入力してください',
+    '已被': 'によりミュートされました',
+    '的禁言已被': 'のミュートが解除されました',
+    '禁言失败': 'ミュートに失敗しました'
+  },
+  'zh-TW': {
+    '[通知]': '[通知]',
+    ' 用户': ' 使用者',
+    '已被 ': '已被 ',
+    '的禁言已被 ': '的禁言已被 ',
+    '，理由：': '，原因：',
+    '解除禁言': '解除禁言',
+    '禁言至 ': '禁言至 ',
+    '将用户禁言': '將使用者禁言',
+    '禁言用户，时长（min）': '禁言時間（分鐘）',
+    '确认解除该成员的禁言吗？': '確定要解除該成員的禁言嗎？',
+    '极简聊窗': '極簡聊窗',
+    '登录后加入对话，和大家分享此刻。': '登入後加入對話，和大家分享此刻。',
+    '账户名': '帳號名稱',
+    '消息长度不足，无法添加提及': '訊息字數已達上限，無法新增提及',
+    '请输入账户名': '請輸入帳號名稱',
+    '密码': '密碼',
+    '请输入密码': '請輸入密碼',
+    '登录': '登入',
+    '注册新账号': '註冊新帳號',
+    '请使用账户名登录': '請使用帳號名稱登入',
+    '支持或改编这个项目？': '想支持或改編這個專案嗎？',
+    '给 GitHub 仓库点个 Star': '到 GitHub 專案按個 Star',
+    'B站反馈 · 学习交流': 'Bilibili · 錯誤回報與交流',
+    '创建账号': '建立帳號',
+    '设置登录账户名和聊天室显示名称。': '設定登入帳號名稱和聊天室顯示名稱。',
+    '账户名（唯一）': '帳號名稱（不可重複）',
+    '用于登录，不能与他人重复': '用於登入，不能與他人重複',
+    '用户名（对外展示）': '顯示名稱',
+    '其他成员看到的名称': '其他成員看到的名稱',
+    '确认密码': '確認密碼',
+    '请再次输入密码': '請再次輸入密碼',
+    '返回登录': '返回登入',
+    '确认注册': '確認註冊',
+    '正在连接...': '正在連線...',
+    '人在线': '人在線上',
+    '成员': '成員',
+    '切换到极夜': '切換至深色模式',
+    '切换到白昼': '切換至淺色模式',
+    '打开我的资料': '開啟我的個人資料',
+    '聊天消息': '聊天訊息',
+    '这里暂时还没有消息': '目前還沒有訊息',
+    '发送第一条消息，开启对话吧。': '傳送第一則訊息，開始聊天吧。',
+    '说点什么吧...': '說點什麼吧...',
+    '输入消息': '輸入訊息',
+    'Enter 发送 · Shift + Enter 换行': 'Enter 傳送 · Shift + Enter 換行',
+    '发送': '傳送',
+    '发送消息': '傳送訊息',
+    '引用': '引用',
+    '引用:': '回覆給：',
+    '取消引用': '取消引用',
+    '提及用户': '提及使用者',
+    '没有匹配的用户': '找不到符合的使用者',
+    '选择语言': '選擇語言',
+    '显示偏好': '顯示偏好',
+    '极夜': '深色',
+    '白昼': '淺色',
+    '简体中文': '簡體中文',
+    '日本語': '日文',
+    '繁體中文': '繁體中文',
+    '极简聊窗成员': '極簡聊窗成員',
+    '正在加载...': '載入中...',
+    '关闭成员列表': '關閉成員清單',
+    '我的': '我的個人資料',
+    '管理你的个人资料': '管理你的個人資料',
+    '关闭': '關閉',
+    '点击更改头像': '點擊更改頭像',
+    '选择头像': '選擇頭像',
+    '更改用户名': '更改顯示名稱',
+    '账户名：': '帳號名稱：',
+    '新用户名': '新顯示名稱',
+    '取消': '取消',
+    '保存': '儲存',
+    '修改密码': '修改密碼',
+    '退出登录': '登出',
+    '请先验证当前密码': '請先驗證目前密碼',
+    '当前密码': '目前密碼',
+    '新密码': '新密碼',
+    '确认新密码': '確認新密碼',
+    '确认修改': '確認修改',
+    '用户信息': '使用者資訊',
+    '设置禁言时长，单位为分钟': '設定禁言時間，單位為分鐘',
+    '理由': '原因',
+    '请填写禁言理由': '請填寫禁言原因',
+    '确认': '確認',
+    '解除禁言': '解除禁言',
+    '在线': '在線上',
+    '离线': '離線',
+    '暂无成员': '目前沒有成員',
+    '成员加载失败': '載入成員失敗',
+    '未知用户': '未知使用者',
+    '禁言': '禁言',
+    '解除': '解除',
+    '图片处理失败': '圖片處理失敗',
+    '发送失败，请检查网络后重试。': '傳送失敗，請檢查網路後重試。',
+    '用户名不能为空': '顯示名稱不能空白',
+    '用户名已更新': '顯示名稱已更新',
+    '更新失败，请检查网络后重试。': '更新失敗，請檢查網路後重試。',
+    '请输入大于0的整数分钟': '請輸入大於 0 的整數分鐘',
+    '禁言失败，请检查网络后重试。': '禁言失敗，請檢查網路後重試。',
+    '解除禁言失败，请检查网络后重试。': '解除禁言失敗，請檢查網路後重試。',
+    '头像更新成功！': '頭像更新成功！',
+    '无法处理这张图片': '無法處理這張圖片',
+    '图片压缩失败': '圖片壓縮失敗',
+    '退出登录失败，请重试。': '登出失敗，請重試。',
+    '请完整填写所有密码': '請填寫所有密碼欄位',
+    '两次输入的新密码不一致': '兩次輸入的新密碼不一致',
+    '密码修改成功': '密碼修改成功',
+    '修改失败，请检查网络后重试。': '修改失敗，請檢查網路後重試。',
+    '请填写账户名和密码': '請輸入帳號名稱和密碼',
+    '请完整填写所有信息': '請填寫所有資料',
+    '两次输入的密码不一致': '兩次輸入的密碼不一致',
+    '注册成功，请使用账户名登录。': '註冊成功，請使用帳號名稱登入。',
+    '暂时无法连接服务器，请稍后重试。': '暫時無法連線至伺服器，請稍後重試。',
+    '连接异常': '連線異常',
+    '加载成员失败': '載入成員失敗',
+    '请检查网络后重试。': '請檢查網路後重試。',
+    '用户不存在': '使用者不存在',
+    '未登录': '尚未登入',
+    '会话已过期，请重新登录': '工作階段已過期，請重新登入',
+    '账户名或密码错误': '帳號名稱或密碼錯誤',
+    '账户名已存在': '帳號名稱已存在',
+    '注册名额已满(100人)': '註冊名額已滿（100 人）',
+    '当前密码不正确': '目前密碼不正確',
+    '没有禁言权限': '沒有禁言權限',
+    '没有解除禁言权限': '沒有解除禁言的權限',
+    '禁言理由不能为空': '禁言原因不能空白',
+    '不能禁言超管': '不能禁言擁有者',
+    '该成员当前未被禁言': '該成員目前未被禁言',
+    '消息不能为空且不能超过300字': '訊息不能空白且不得超過 300 字',
+    '引用消息无效': '引用訊息無效',
+    '用户': '使用者',
+    '超管': '擁有者',
+    '管理': '管理員',
+    'Lv.1': '使用者',
+    'Muted {name} for {minutes} min': '已將 {name} 禁言 {minutes} 分鐘',
+    'Profile of {name}': '{name}的個人資料',
+    'Mute {name}': '將 {name} 禁言',
+    'Mute {name} for (min)': '將 {name} 禁言（分鐘）',
+    'Unmute {name}': '解除 {name} 的禁言',
+    'Unmute {name}?': '確定要解除 {name} 的禁言嗎？',
+    "View {name}'s profile": '查看 {name} 的個人資料',
+    '{name} was unmuted': '已解除 {name} 的禁言',
+    '{count} member': '共 {count} 位成員',
+    '{count} members': '共 {count} 位成員',
+    '共 {count} 位成员': '共 {count} 位成員',
+    '账户名只能包含大小写英文字母、数字、下划线和美元符号（$）': '帳號名稱只能包含英文字母、數字、底線和美元符號（$）',
+    '输入分钟数（min）': '請輸入分鐘數',
+    'AI': 'AI',
+    '已将': '已將其禁言：',
+    ' 分钟': ' 分鐘',
+    '已解除禁言': '已解除禁言',
+    '上传失败：': '上傳失敗：',
+    '压缩后的图片读取失败': '讀取壓縮後的圖片失敗',
+    '图片无法压缩到100KB以内，请选择较小的图片': '圖片無法壓縮至 100 KB 以下，請選擇較小的圖片',
+    '账户名、用户名和密码不能为空': '帳號名稱、顯示名稱和密碼不能空白',
+    '账户名最多30个字符，用户名最多20个字符': '帳號名稱最多 30 個字元，顯示名稱最多 20 個字元',
+    '请完整填写当前密码和新密码': '請填寫目前密碼和新密碼',
+    '新密码不能超过128个字符': '新密碼不得超過 128 個字元',
+    '成员无效': '成員無效',
+    '禁言时长必须是大于0的整数分钟': '禁言時間必須是大於 0 的整數分鐘',
+    '禁言理由不能超过200个字符': '禁言原因不得超過 200 個字元',
+    '禁言时长过长': '禁言時間過長',
+    '成员不存在': '成員不存在',
+    '管理只能禁言普通用户或AI用户': '管理員只能禁言一般使用者或 AI 使用者',
+    '管理只能解除普通用户或AI用户的禁言': '管理員只能解除一般使用者或 AI 使用者的禁言',
+    '不能解除超管的禁言': '不能解除擁有者的禁言',
+    '用户名不能超过20个字符': '顯示名稱不得超過 20 個字元',
+    '头像必须压缩到100KB以内': '頭像必須壓縮至 100 KB 以下',
+    '请输入禁言理由': '請輸入禁言原因',
+    '已被': '已被',
+    '的禁言已被': '的禁言已被',
+    '禁言失败': '禁言失敗'
+  }
+};
 const reverseTranslations = Object.fromEntries(
-  Object.entries(translations).map(([source, translated]) => [translated, source])
+  Object.entries(localeTranslations).flatMap(([, dictionary]) =>
+    Object.entries(dictionary).map(([source, translated]) => [translated, source])
+  )
 );
 
 function localizeText(text) {
-  return currentLanguage === 'en' ? translations[text] || text : text;
+  const source = reverseTranslations[text] || text;
+  if (currentLanguage === 'zh-CN') return source;
+  return localeTranslations[currentLanguage]?.[source] || translations[source] || source;
+}
+
+function localizeFormat(template, values) {
+  const simplifiedChineseTemplates = {
+    'Muted {name} for {minutes} min': '已将{name}禁言 {minutes} 分钟',
+    'Profile of {name}': '用户{name}的个人资料',
+    'Mute {name}': '将用户{name}禁言',
+    'Mute {name} for (min)': '禁言用户{name}，时长（min）',
+    'Unmute {name}': '解除用户{name}的禁言',
+    'Unmute {name}?': '确认解除{name}的禁言吗？',
+    "View {name}'s profile": '查看用户{name}的资料',
+    '{name} was unmuted': '{name}已解除禁言',
+    '{count} member': '共 {count} 位成员',
+    '{count} members': '共 {count} 位成员'
+  };
+  const localized = currentLanguage === 'zh-CN'
+    ? simplifiedChineseTemplates[template] || template
+    : localizeText(template);
+  return localized.replace(/\{(\w+)\}/g, (match, key) =>
+    Object.prototype.hasOwnProperty.call(values, key) ? values[key] : match
+  );
 }
 
 function applyLanguage(root = document) {
-  const isEnglish = currentLanguage === 'en';
-  document.documentElement.lang = isEnglish ? 'en' : 'zh-CN';
-  const excluded = '.sender-name, .content, .quoted-message, .member-name, .notification-user, .notification-reason, #my-button-name, #my-profile-name, #user-info-name, #my-account, #user-info-account, input, textarea, script, style';
+  document.documentElement.lang = currentLanguage;
+  const excluded = '.sender-name, .content, .quoted-message, .member-name, .notification-user, .notification-reason, #my-button-name, #my-profile-name, #user-info-name, #my-account, #user-info-account, .language-picker, input, textarea, script, style';
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node;
   while ((node = walker.nextNode())) {
@@ -190,7 +573,7 @@ function applyLanguage(root = document) {
     const original = originalTextNodes.get(node);
     const trimmed = original.trim();
     const source = reverseTranslations[trimmed] || trimmed;
-    const translated = isEnglish ? translations[source] || source : source;
+    const translated = localizeText(source);
     const leading = original.match(/^\s*/)[0];
     const trailing = original.match(/\s*$/)[0];
     const localizedValue = `${leading}${translated}${trailing}`;
@@ -207,14 +590,24 @@ function applyLanguage(root = document) {
       if (!(attribute in originals)) originals[attribute] = element.getAttribute(attribute);
       const original = originals[attribute];
       const source = reverseTranslations[original] || original;
-      const translated = isEnglish ? translations[source] || source : source;
+      const translated = localizeText(source);
       if (element.getAttribute(attribute) !== translated) element.setAttribute(attribute, translated);
     });
   });
-  document.querySelectorAll('.language-toggle').forEach(languageButton => {
-    languageButton.textContent = isEnglish ? '中文' : 'English';
-    languageButton.setAttribute('aria-label', isEnglish ? 'Switch to Chinese' : '切换到英文');
+  const languageButton = document.getElementById('language-toggle');
+  if (languageButton) languageButton.setAttribute('aria-label', localizeText('选择语言'));
+  const languagePicker = document.getElementById('language-picker');
+  if (languagePicker) languagePicker.setAttribute('aria-label', localizeText('选择语言'));
+  languagePicker?.querySelectorAll('[data-language]').forEach(option => {
+    option.setAttribute('aria-pressed', String(option.dataset.language === currentLanguage));
   });
+  const mentionButton = document.getElementById('mention-toggle');
+  if (mentionButton) {
+    mentionButton.setAttribute('aria-label', localizeText('提及用户'));
+    mentionButton.setAttribute('title', localizeText('提及用户'));
+  }
+  const mentionPicker = document.getElementById('mention-picker');
+  if (mentionPicker) mentionPicker.setAttribute('aria-label', localizeText('提及用户'));
   document.querySelectorAll('.role-badges .user-badge[data-role]').forEach(badge => {
     badge.textContent = roleLabel(badge.dataset.role);
   });
@@ -232,8 +625,10 @@ function formatMessageTime(timestamp) {
 
 function formatLocalizedDateTime(timestamp) {
   const date = new Date(timestamp);
-  if (currentLanguage === 'en') {
-    return new Intl.DateTimeFormat('en-US', {
+  if (currentLanguage !== 'zh-CN') {
+    const locale = currentLanguage === 'en' ? 'en-US'
+      : currentLanguage === 'ja' ? 'ja-JP' : 'zh-TW';
+    return new Intl.DateTimeFormat(locale, {
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
@@ -251,9 +646,9 @@ function refreshLocalizedDetails() {
   const memberCount = document.getElementById('members-count');
   if (memberCount.dataset.memberCount !== undefined) {
     const count = Number(memberCount.dataset.memberCount);
-    memberCount.textContent = currentLanguage === 'en'
-      ? `${count} ${count === 1 ? 'member' : 'members'}`
-      : `共 ${count} 位成员`;
+    memberCount.textContent = currentLanguage === 'zh-CN'
+      ? `共 ${count} 位成员`
+      : localizeFormat(count === 1 ? '{count} member' : '{count} members', { count });
   }
   document.querySelectorAll('.member-mute-state[data-muted-until]').forEach(state => {
     const date = formatLocalizedDateTime(Number(state.dataset.mutedUntil));
@@ -262,25 +657,15 @@ function refreshLocalizedDetails() {
   const userInfoDialog = document.getElementById('user-info-dialog');
   if (userInfoDialog.open) {
     const displayName = document.getElementById('user-info-name').textContent;
-    document.getElementById('user-info-description').textContent = currentLanguage === 'en'
-      ? `Profile of ${displayName}`
-      : `用户${displayName}的个人资料`;
+    document.getElementById('user-info-description').textContent = localizeFormat('Profile of {name}', { name: displayName });
   }
   if (muteTarget && document.getElementById('mute-dialog').open) {
-    document.getElementById('mute-title').textContent = currentLanguage === 'en'
-      ? `Mute ${muteTarget.display_name}`
-      : `将用户${muteTarget.display_name}禁言`;
-    document.getElementById('mute-duration-label').textContent = currentLanguage === 'en'
-      ? `Mute ${muteTarget.display_name} for (min)`
-      : `禁言用户${muteTarget.display_name}，时长（min）`;
+    document.getElementById('mute-title').textContent = localizeFormat('Mute {name}', { name: muteTarget.display_name });
+    document.getElementById('mute-duration-label').textContent = localizeFormat('Mute {name} for (min)', { name: muteTarget.display_name });
   }
   if (muteTarget && document.getElementById('unmute-dialog').open) {
-    document.getElementById('unmute-title').textContent = currentLanguage === 'en'
-      ? `Unmute ${muteTarget.display_name}`
-      : `解除用户${muteTarget.display_name}的禁言`;
-    document.getElementById('unmute-description').textContent = currentLanguage === 'en'
-      ? `Unmute ${muteTarget.display_name}?`
-      : `确认解除${muteTarget.display_name}的禁言吗？`;
+    document.getElementById('unmute-title').textContent = localizeFormat('Unmute {name}', { name: muteTarget.display_name });
+    document.getElementById('unmute-description').textContent = localizeFormat('Unmute {name}?', { name: muteTarget.display_name });
   }
   document.querySelectorAll('.profile-trigger').forEach(trigger => {
     const member = trigger.closest('.member-item');
@@ -289,9 +674,7 @@ function refreshLocalizedDetails() {
     const profile = userProfiles.get(String(userId));
     const displayName = profile?.display_name || trigger.textContent;
     if (!userId || !displayName) return;
-    trigger.setAttribute('aria-label', currentLanguage === 'en'
-      ? `View ${displayName}'s profile`
-      : `查看用户${displayName}的资料`);
+    trigger.setAttribute('aria-label', localizeFormat("View {name}'s profile", { name: displayName }));
   });
 }
 
@@ -415,10 +798,10 @@ function showLoginPage(message = '', isSuccess = false) {
 }
 
 function roleLabel(role) {
-  if (role === 'super_admin') return currentLanguage === 'en' ? 'Owner' : '超管';
-  if (role === 'admin') return currentLanguage === 'en' ? 'Admin' : '管理';
+  if (role === 'super_admin') return localizeText('超管');
+  if (role === 'admin') return localizeText('管理');
   if (role === 'ai') return 'AI';
-  return currentLanguage === 'en' ? 'User' : 'Lv.1';
+  return localizeText('Lv.1');
 }
 
 function roleLabels(role) {
@@ -537,7 +920,7 @@ function updateRoleBadges(rolesById) {
   if (myBadge && myCurrentRole) setRoleBadges(myBadge, myCurrentRole);
 }
 
-function renderSystemNotification(container, message) {
+function renderSystemNotification(container, message, existingRow = null) {
   let notification;
   try {
     notification = JSON.parse(message.text);
@@ -545,29 +928,31 @@ function renderSystemNotification(container, message) {
     notification = null;
   }
 
-  const row = document.createElement('div');
+  const row = existingRow || document.createElement('div');
+  row.replaceChildren();
   row.className = 'system-notification';
+  row.dataset.rawText = message.text;
   const marker = document.createElement('span');
   marker.className = 'notification-marker';
-  marker.textContent = '[通知]';
+  marker.textContent = localizeText('[通知]');
   row.appendChild(marker);
 
   if (!notification || notification.type !== 'moderation' || !['mute', 'unmute'].includes(notification.action)) {
     row.append(document.createTextNode(` ${message.text}`));
-    container.appendChild(row);
+    if (!existingRow) container.appendChild(row);
     return;
   }
 
-  row.append(document.createTextNode(' 用户'));
+  row.append(document.createTextNode(localizeText(' 用户')));
   const targetName = document.createElement('strong');
   targetName.className = 'notification-user';
   targetName.textContent = notification.targetName;
   row.append(targetName, document.createTextNode(' '));
 
   if (notification.action === 'mute') {
-    row.append(document.createTextNode('已被 '));
+    row.append(document.createTextNode(localizeText('已被 ')));
   } else {
-    row.append(document.createTextNode('的禁言已被 '));
+    row.append(document.createTextNode(localizeText('的禁言已被 ')));
   }
   const actorName = document.createElement('strong');
   actorName.className = 'notification-user notification-actor';
@@ -579,21 +964,21 @@ function renderSystemNotification(container, message) {
 
   const operation = document.createElement('span');
   operation.className = `notification-operation${notification.action === 'unmute' ? ' released' : ''}`;
-  operation.textContent = notification.action === 'mute' ? '禁言' : '解除禁言';
+  operation.textContent = localizeText(notification.action === 'mute' ? '禁言' : '解除禁言');
   row.appendChild(operation);
 
   if (notification.action === 'mute') {
     const duration = document.createElement('strong');
     duration.className = 'notification-duration';
     duration.textContent = ` ${notification.durationMinutes}min`;
-    row.append(duration, document.createTextNode('，理由：'));
+    row.append(duration, document.createTextNode(localizeText('，理由：')));
     const reason = document.createElement('span');
     reason.className = 'notification-reason';
     reason.textContent = notification.reason;
     row.appendChild(reason);
   }
 
-  container.appendChild(row);
+  if (!existingRow) container.appendChild(row);
 }
 
 // 登录后启动
@@ -634,12 +1019,14 @@ async function loadUsers() {
   const res = await api('getUsers');
   if (res.error) throw new Error(res.error);
   if (res.users) {
+    userProfiles.clear();
     res.users.forEach(user => {
       userProfiles.set(String(user.id), user);
       if (user.avatar_base64) userAvatars[user.id] = user.avatar_base64;
       else delete userAvatars[user.id];
       updateUserAvatar(user.id, user.avatar_base64, user.display_name);
     });
+    updateMentionSuggestions();
   }
   return res;
 }
@@ -659,9 +1046,7 @@ function showUserInfo(userId, fallbackName = '', fallbackRole = 'user') {
   } else {
     avatarImage.textContent = displayName.charAt(0).toUpperCase();
   }
-  document.getElementById('user-info-description').textContent = currentLanguage === 'en'
-    ? `Profile of ${displayName}`
-    : `用户${displayName}的个人资料`;
+  document.getElementById('user-info-description').textContent = localizeFormat('Profile of {name}', { name: displayName });
   document.getElementById('user-info-name').textContent = displayName;
   document.getElementById('user-info-account').textContent = profile?.account || '—';
   const badge = document.getElementById('user-info-role');
@@ -686,9 +1071,7 @@ function makeProfileTrigger(element, user) {
   element.classList.add('profile-trigger');
   element.setAttribute('role', 'button');
   element.tabIndex = 0;
-  element.setAttribute('aria-label', currentLanguage === 'en'
-    ? `View ${user.display_name}'s profile`
-    : `查看用户${user.display_name}的资料`);
+  element.setAttribute('aria-label', localizeFormat("View {name}'s profile", { name: user.display_name }));
   element.addEventListener('click', () => openUserInfo(user.id, user.display_name, user.role));
   element.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -794,9 +1177,9 @@ async function showMembers() {
       first.display_name.localeCompare(second.display_name, 'zh-CN')
     );
     count.dataset.memberCount = users.length;
-    count.textContent = currentLanguage === 'en'
-      ? `${users.length} ${users.length === 1 ? 'member' : 'members'}`
-      : `共 ${users.length} 位成员`;
+    count.textContent = currentLanguage === 'zh-CN'
+      ? `共 ${users.length} 位成员`
+      : localizeFormat(users.length === 1 ? '{count} member' : '{count} members', { count: users.length });
     if (users.length === 0) {
       const empty = document.createElement('p');
       empty.className = 'members-message';
@@ -1020,6 +1403,7 @@ async function sendMessage() {
       return;
     }
     input.value = '';
+    closeMentionPicker();
     clearReplyPreview();
     updateComposer();
     await fetchMessages();
@@ -1085,12 +1469,8 @@ async function changeDisplayName(event) {
 
 function openMuteDialog(user) {
   muteTarget = user;
-  document.getElementById('mute-title').textContent = currentLanguage === 'en'
-    ? `Mute ${user.display_name}`
-    : `将用户${user.display_name}禁言`;
-  document.getElementById('mute-duration-label').textContent = currentLanguage === 'en'
-    ? `Mute ${user.display_name} for (min)`
-    : `禁言用户${user.display_name}，时长（min）`;
+  document.getElementById('mute-title').textContent = localizeFormat('Mute {name}', { name: user.display_name });
+  document.getElementById('mute-duration-label').textContent = localizeFormat('Mute {name} for (min)', { name: user.display_name });
   document.getElementById('mute-duration').value = '';
   document.getElementById('mute-reason').value = '';
   document.getElementById('mute-msg').textContent = '';
@@ -1130,9 +1510,10 @@ async function muteMember(event) {
       return;
     }
 
-    message.textContent = currentLanguage === 'en'
-      ? `Muted ${res.displayName} for ${durationMinutes} min`
-      : `已将${res.displayName}禁言 ${durationMinutes} 分钟`;
+    message.textContent = localizeFormat('Muted {name} for {minutes} min', {
+      name: res.displayName,
+      minutes: durationMinutes
+    });
     message.classList.add('success');
     muteTarget.muted_until = res.mutedUntil;
     const member = document.querySelector(`.member-item[data-user-id="${res.userId}"]`);
@@ -1163,12 +1544,8 @@ async function muteMember(event) {
 
 function openUnmuteDialog(user) {
   muteTarget = user;
-  document.getElementById('unmute-title').textContent = currentLanguage === 'en'
-    ? `Unmute ${user.display_name}`
-    : `解除用户${user.display_name}的禁言`;
-  document.getElementById('unmute-description').textContent = currentLanguage === 'en'
-    ? `Unmute ${user.display_name}?`
-    : `确认解除${user.display_name}的禁言吗？`;
+  document.getElementById('unmute-title').textContent = localizeFormat('Unmute {name}', { name: user.display_name });
+  document.getElementById('unmute-description').textContent = localizeFormat('Unmute {name}?', { name: user.display_name });
   document.getElementById('unmute-msg').textContent = '';
   document.getElementById('unmute-dialog').showModal();
 }
@@ -1187,9 +1564,7 @@ async function unmuteMember() {
       return;
     }
 
-    message.textContent = currentLanguage === 'en'
-      ? `${res.displayName} was unmuted`
-      : `${res.displayName}已解除禁言`;
+    message.textContent = localizeFormat('{name} was unmuted', { name: res.displayName });
     message.classList.add('success');
     muteTarget.muted_until = 0;
     const member = document.querySelector(`.member-item[data-user-id="${res.userId}"]`);
@@ -1224,6 +1599,133 @@ function setTheme(theme) {
   } catch (error) {
     console.error('无法保存主题偏好：', error);
   }
+}
+
+function setLanguage(language) {
+  if (!Object.prototype.hasOwnProperty.call(localeTranslations, language)) return;
+  currentLanguage = language;
+  applyLanguage();
+  refreshLocalizedDetails();
+  document.querySelectorAll('.system-notification[data-raw-text]').forEach(row => {
+    renderSystemNotification(row.parentElement, { text: row.dataset.rawText }, row);
+  });
+  updateMentionSuggestions();
+  try {
+    localStorage.setItem('chat-language', currentLanguage);
+  } catch (error) {
+    console.error('无法保存语言偏好：', error);
+  }
+}
+
+function closeMentionPicker() {
+  const picker = document.getElementById('mention-picker');
+  const input = document.getElementById('msg-input');
+  if (!picker || !input) return;
+  picker.hidden = true;
+  input.setAttribute('aria-expanded', 'false');
+  input.removeAttribute('aria-activedescendant');
+  mentionStartIndex = -1;
+  mentionFilteredUsers = [];
+  mentionActiveIndex = 0;
+}
+
+function showMentionMessage(message) {
+  const input = document.getElementById('msg-input');
+  const picker = document.getElementById('mention-picker');
+  if (!input || !picker) return;
+  const status = document.createElement('p');
+  status.className = 'mention-empty';
+  status.textContent = localizeText(message);
+  picker.replaceChildren(status);
+  picker.hidden = false;
+  input.setAttribute('aria-expanded', 'true');
+  input.removeAttribute('aria-activedescendant');
+  mentionStartIndex = -1;
+  mentionFilteredUsers = [];
+}
+
+function updateMentionSuggestions() {
+  const input = document.getElementById('msg-input');
+  const picker = document.getElementById('mention-picker');
+  if (!input || !picker) return;
+
+  const beforeCaret = input.value.slice(0, input.selectionStart);
+  const match = /@([^\s@]*)$/.exec(beforeCaret);
+  if (!match) {
+    closeMentionPicker();
+    return;
+  }
+
+  mentionStartIndex = match.index;
+  const query = match[1].toLocaleLowerCase(currentLanguage);
+  mentionFilteredUsers = [...userProfiles.values()].filter(user =>
+    String(user.display_name || '').toLocaleLowerCase(currentLanguage).includes(query)
+  );
+  mentionActiveIndex = Math.min(mentionActiveIndex, mentionFilteredUsers.length - 1);
+  if (mentionActiveIndex < 0) mentionActiveIndex = 0;
+  picker.replaceChildren();
+
+  if (mentionFilteredUsers.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'mention-empty';
+    empty.textContent = localizeText('没有匹配的用户');
+    picker.appendChild(empty);
+  } else {
+    mentionFilteredUsers.forEach((user, index) => {
+      const option = document.createElement('button');
+      option.id = `mention-option-${index}`;
+      option.className = 'mention-option';
+      option.type = 'button';
+      option.setAttribute('role', 'option');
+      option.dataset.userId = user.id;
+      option.setAttribute('aria-selected', String(index === mentionActiveIndex));
+      option.textContent = user.display_name;
+      option.addEventListener('mousedown', event => event.preventDefault());
+      option.addEventListener('click', () => insertMention(user));
+      picker.appendChild(option);
+    });
+  }
+
+  picker.hidden = false;
+  input.setAttribute('aria-expanded', 'true');
+  if (mentionFilteredUsers.length > 0) {
+    input.setAttribute('aria-activedescendant', `mention-option-${mentionActiveIndex}`);
+  } else {
+    input.removeAttribute('aria-activedescendant');
+  }
+}
+
+function insertMention(user) {
+  const input = document.getElementById('msg-input');
+  if (!input || mentionStartIndex < 0) return;
+  const caret = input.selectionStart;
+  const mention = `@${user.display_name} `;
+  const value = input.value.slice(0, mentionStartIndex) + mention + input.value.slice(caret);
+  if (value.length > Number(input.maxLength)) {
+    showMentionMessage('消息长度不足，无法添加提及');
+    return;
+  }
+  const nextCaret = mentionStartIndex + mention.length;
+  input.value = value;
+  input.setSelectionRange(nextCaret, nextCaret);
+  closeMentionPicker();
+  input.focus();
+  updateComposer();
+}
+
+function insertMentionTrigger() {
+  const input = document.getElementById('msg-input');
+  if (!input) return;
+  if (input.value.length >= Number(input.maxLength)) {
+    showMentionMessage('消息长度不足，无法添加提及');
+    return;
+  }
+  const start = input.selectionStart;
+  const end = input.selectionEnd;
+  input.setRangeText('@', start, end, 'end');
+  input.focus();
+  updateMentionSuggestions();
+  updateComposer();
 }
 
 // === 头像压缩与上传逻辑 ===
@@ -1371,13 +1873,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const messageForm = document.getElementById('message-form');
   const membersDialog = document.getElementById('members-dialog');
   const myDialog = document.getElementById('my-dialog');
+  const languageDialog = document.getElementById('language-dialog');
   const userInfoDialog = document.getElementById('user-info-dialog');
   const changePasswordDialog = document.getElementById('change-password-dialog');
   const muteDialog = document.getElementById('mute-dialog');
   const unmuteDialog = document.getElementById('unmute-dialog');
 
   try {
-    currentLanguage = localStorage.getItem('chat-language') === 'en' ? 'en' : 'zh-CN';
+    const savedLanguage = localStorage.getItem('chat-language');
+    currentLanguage = Object.prototype.hasOwnProperty.call(localeTranslations, savedLanguage) ? savedLanguage : 'zh-CN';
   } catch (error) {
     console.error('无法读取语言偏好：', error);
   }
@@ -1391,18 +1895,30 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('无法读取主题偏好：', error);
   }
   setTheme(savedTheme);
-  document.querySelectorAll('.language-toggle').forEach(languageButton => languageButton.addEventListener('click', () => {
-    currentLanguage = currentLanguage === 'en' ? 'zh-CN' : 'en';
-    applyLanguage();
-    refreshLocalizedDetails();
-    try {
-      localStorage.setItem('chat-language', currentLanguage === 'en' ? 'en' : 'zh-CN');
-    } catch (error) {
-      console.error('无法保存语言偏好：', error);
-    }
-  }));
+  const languageButton = document.getElementById('language-toggle');
+  const languagePicker = document.getElementById('language-picker');
+  languageButton.addEventListener('click', () => {
+    languageButton.setAttribute('aria-expanded', 'true');
+    languageDialog.showModal();
+    languagePicker.querySelector(`[data-language="${currentLanguage}"]`)?.focus();
+  });
+  languagePicker.querySelectorAll('[data-language]').forEach(option => {
+    option.addEventListener('click', () => {
+      setLanguage(option.dataset.language);
+      languageDialog.close();
+    });
+  });
+  document.getElementById('language-dialog-close').addEventListener('click', () => languageDialog.close());
+  languageDialog.addEventListener('close', () => {
+    languageButton.setAttribute('aria-expanded', 'false');
+    languageButton.focus();
+  });
   document.getElementById('theme-toggle').addEventListener('click', () => {
     setTheme(document.documentElement.dataset.theme === 'night' ? 'day' : 'night');
+  });
+  document.getElementById('mention-toggle').addEventListener('click', insertMentionTrigger);
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.composer') && !event.target.closest('.mention-toggle')) closeMentionPicker();
   });
 
   authForm.addEventListener('submit', event => {
@@ -1493,8 +2009,33 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('unmute-confirm-btn').addEventListener('click', unmuteMember);
 
   if (input) {
-    input.addEventListener('input', updateComposer);
+    input.addEventListener('input', () => {
+      mentionActiveIndex = 0;
+      updateMentionSuggestions();
+      updateComposer();
+    });
+    input.addEventListener('keyup', updateMentionSuggestions);
     input.addEventListener('keydown', (e) => {
+      const picker = document.getElementById('mention-picker');
+      if (!picker.hidden && mentionFilteredUsers.length > 0) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const direction = e.key === 'ArrowDown' ? 1 : -1;
+          mentionActiveIndex = (mentionActiveIndex + direction + mentionFilteredUsers.length) % mentionFilteredUsers.length;
+          updateMentionSuggestions();
+          return;
+        }
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          insertMention(mentionFilteredUsers[mentionActiveIndex]);
+          return;
+        }
+      }
+      if (e.key === 'Escape' && !picker.hidden) {
+        e.preventDefault();
+        closeMentionPicker();
+        return;
+      }
       // 如果按下的是 Enter 键
       if (e.key === 'Enter') {
         // 如果没有按 Shift，则发送消息并阻止默认换行

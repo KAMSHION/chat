@@ -49,6 +49,11 @@ textarea:focus-visible {
 .project-support {
   margin-top: 16px;
   padding-top: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 5px 8px;
   border-top: 1px solid rgba(226, 231, 241, .75);
   color: #8992a5;
   font-size: 11px;
@@ -56,18 +61,33 @@ textarea:focus-visible {
   text-align: center;
 }
 
+.project-support-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 .project-support a {
   display: inline-block;
-  margin-left: 4px;
+  padding: 3px 7px;
+  border-radius: 7px;
   color: #526de5;
   font-weight: 500;
   text-decoration: none;
+  transition: color .15s, background .15s, border-color .15s;
 }
 
 .project-support a:hover {
   color: #4059ca;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration: none;
+  background: rgba(82, 109, 229, .08);
+}
+
+.project-support a:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 #auth-panel,
@@ -385,6 +405,7 @@ textarea:focus-visible {
 
 #members-dialog,
 #my-dialog,
+#language-dialog,
 #user-info-dialog,
 #mute-dialog,
 #change-password-dialog,
@@ -404,8 +425,13 @@ textarea:focus-visible {
   width: min(520px, calc(100% - 32px));
 }
 
+#language-dialog {
+  width: min(340px, calc(100% - 32px));
+}
+
 #members-dialog::backdrop,
 #my-dialog::backdrop,
+#language-dialog::backdrop,
 #user-info-dialog::backdrop,
 #mute-dialog::backdrop,
 #change-password-dialog::backdrop,
@@ -435,6 +461,7 @@ textarea:focus-visible {
 
 #members-dialog #members-close,
 #my-dialog #my-dialog-close,
+#language-dialog #language-dialog-close,
 #user-info-dialog #user-info-close,
 #mute-dialog #mute-dialog-close,
 #change-password-dialog #change-password-close,
@@ -792,6 +819,56 @@ textarea:focus-visible {
 .my-preference-actions button:hover {
   border-color: #cbd3e1;
   background: #eef1f7;
+}
+
+.my-preference-actions .language-toggle {
+  display: grid;
+  place-items: center;
+}
+
+.language-toggle svg,
+.mention-toggle svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.language-picker {
+  padding: 14px 20px 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.language-picker button {
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 9px;
+  border: 1px solid #e1e6ef;
+  border-radius: 9px;
+  color: #58647c;
+  background: #f7f8fc;
+  font-size: 12px;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.language-picker button:hover,
+.language-picker button[aria-pressed="true"] {
+  border-color: #aab7f0;
+  color: #435cc8;
+  background: #eef1ff;
+}
+
+.language-picker button:focus-visible,
+.language-toggle:focus-visible,
+.mention-toggle:focus-visible,
+.mention-option:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 .my-profile-actions {
@@ -1344,6 +1421,7 @@ textarea:focus-visible {
 }
 
 .composer {
+  position: relative;
   flex: 1;
   min-width: 0;
   padding: 8px 12px 7px;
@@ -1351,6 +1429,71 @@ textarea:focus-visible {
   border-radius: 13px;
   background: #fbfcfe;
   transition: border-color .2s, box-shadow .2s;
+}
+
+.mention-toggle {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #e1e6ef;
+  border-radius: 11px;
+  color: #65728b;
+  background: #f7f8fc;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.mention-toggle:hover {
+  border-color: #cbd3e1;
+  color: #526de5;
+  background: #eef1ff;
+}
+
+.mention-picker {
+  position: absolute;
+  z-index: 25;
+  right: 0;
+  bottom: calc(100% + 9px);
+  left: 0;
+  max-height: min(260px, 45vh);
+  padding: 5px;
+  overflow: auto;
+  border: 1px solid #e2e7f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(32, 45, 76, .17);
+}
+
+.mention-picker[hidden] {
+  display: none;
+}
+
+.mention-option {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: #39445a;
+  background: transparent;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mention-option:hover,
+.mention-option[aria-selected="true"] {
+  color: #435cc8;
+  background: #eef1ff;
+}
+
+.mention-empty {
+  margin: 0;
+  padding: 10px;
+  color: #8791a5;
+  font-size: 12px;
 }
 
 .reply-preview {
@@ -1567,6 +1710,12 @@ textarea:focus-visible {
     gap: 8px;
   }
 
+  .mention-toggle {
+    width: 34px;
+    height: 36px;
+    flex-basis: 34px;
+  }
+
   .composer {
     padding: 7px 9px 6px;
   }
@@ -1650,6 +1799,8 @@ html[data-theme="night"] .project-support a {
 
 html[data-theme="night"] .project-support a:hover {
   color: #c0caff;
+  text-decoration: none;
+  background: rgba(174, 186, 255, .1);
 }
 
 html[data-theme="night"] #auth-form label,
@@ -2036,6 +2187,12 @@ html[data-theme="night"] .my-preferences {
   background: #1b2432;
 }
 
+html[data-theme="night"] #language-dialog {
+  border-color: #3b4659;
+  color: #e5eaf5;
+  background: #1b2432;
+}
+
 html[data-theme="night"] .my-preferences h3 {
   color: #d2d9e6;
 }
@@ -2048,6 +2205,50 @@ html[data-theme="night"] .my-preference-actions button {
 
 html[data-theme="night"] .my-preference-actions button:hover {
   background: #303b4d;
+}
+
+html[data-theme="night"] .language-picker button {
+  border-color: #3b4659;
+  color: #d2d9e6;
+  background: #222d3d;
+}
+
+html[data-theme="night"] .language-picker button:hover,
+html[data-theme="night"] .language-picker button[aria-pressed="true"] {
+  border-color: #6576c2;
+  color: #c0caff;
+  background: #303a5b;
+}
+
+html[data-theme="night"] .mention-toggle {
+  border-color: #3b4659;
+  color: #aeb9ca;
+  background: #222d3d;
+}
+
+html[data-theme="night"] .mention-toggle:hover {
+  color: #c0caff;
+  background: #303a5b;
+}
+
+html[data-theme="night"] .mention-picker {
+  border-color: #3b4659;
+  background: #1b2432;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+}
+
+html[data-theme="night"] .mention-option {
+  color: #d2d9e6;
+}
+
+html[data-theme="night"] .mention-option:hover,
+html[data-theme="night"] .mention-option[aria-selected="true"] {
+  color: #c0caff;
+  background: #303a5b;
+}
+
+html[data-theme="night"] .mention-empty {
+  color: #9ca8bb;
 }
 
 html[data-theme="night"] .my-profile-actions {
