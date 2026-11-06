@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="day">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>更新日志 · 极简聊窗</title>
+  <link rel="icon" type="image/png" href="kamshion.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="changelog.css">
+</head>
+<body>
+  <main class="app-shell changelog-shell">
+    <header class="changelog-header">
+      <a class="changelog-back" href="index.html">← 返回聊天室</a>
+      <p class="eyebrow">CHANGELOG</p>
+      <h1>极简聊窗 · 更新日志</h1>
+      <p>记录这个聊天室从初版到现在的功能、设计与修复。</p>
+      <div class="version-guide">
+        <strong>如何浏览版本</strong>
+        <span>按主版本 → 次版本 → 修订版本逐层展开，点击具体版本查看更新内容。首版为 0.1.0a；之后的版本均使用 b 标记。</span>
+      </div>
+    </header>
+
+    <section class="release-tree" aria-label="版本更新列表">
+      <details class="release-major" open>
+        <summary><span>0.x</span><small>初始版本 · 最新 0.1.0a</small></summary>
+        <details class="release-minor" open>
+          <summary><span>0.1</span><small>最初的聊天室 · 最新修订 0.1.0a</small></summary>
+          <details class="release-version">
+            <summary><span>0.1.0a</span><small>聊天室初版</small></summary>
+            <ul>
+              <li>建立登录与聊天室的基本页面，支持发送、显示聊天消息。</li>
+              <li>加入基础消息列表、用户信息和初始交互，作为后续迭代的起点。</li>
+            </ul>
+          </details>
+        </details>
+      </details>
+
+      <details class="release-major">
+        <summary><span>1.x</span><small>最新 1.0.0b</small></summary>
+        <details class="release-minor">
+          <summary><span>1.0</span><small>聊天室更名与界面重整 · 最新修订 1.0.0b</small></summary>
+          <details class="release-version">
+            <summary><span>1.0.0b</span><small>从“在线聊天室”更名</small></summary>
+            <ul>
+              <li>依照版本规则，将“在线聊天室”更名为“极简聊天室”，并逐步统一为“极简聊窗”。</li>
+              <li>重整登录页和聊天室的卡片式布局，加入响应式设计、空消息提示、字符计数和表单状态反馈。</li>
+              <li>调整消息气泡、头像、昵称与日期的位置；保留原有配色，不使用气泡尾巴。</li>
+            </ul>
+          </details>
+        </details>
+      </details>
+
+      <details class="release-major" open>
+        <summary><span>2.x</span><small>功能持续扩展 · 最新 2.10.0b</small></summary>
+
+        <details class="release-minor" open>
+          <summary><span>2.0</span><small>账户系统改版 · 最新修订 2.0.0b</small></summary>
+          <details class="release-version">
+            <summary><span>2.0.0b</span><small>破坏性更新</small></summary>
+            <ul>
+              <li>注册时将唯一的登录账户名与聊天室显示用户名分开。</li>
+              <li>登录、成员和消息展示改用对应字段；需要按新字段结构重建 D1 数据表。</li>
+              <li>增加确认密码与注册信息校验，注册完成后可直接返回登录。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.1</span><small>个人资料与显示名 · 最新修订 2.1.0b</small></summary>
+          <details class="release-version">
+            <summary><span>2.1.0b</span><small>资料管理</small></summary>
+            <ul>
+              <li>支持更改聊天室显示用户名，并同步更新历史消息与当前页面中的名称。</li>
+              <li>增加“我的”资料入口和其他成员的只读资料窗口，显示头像、用户名、账户名与角色。</li>
+              <li>个人资料支持修改密码与退出登录；密码更新使用现有安全哈希流程。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.2</span><small>主题与成员管理 · 最新修订 2.2.2b</small></summary>
+          <details class="release-version">
+            <summary><span>2.2.0b</span><small>禁言与主题</small></summary>
+            <ul>
+              <li>增加管理员禁言功能与后端权限检查，并阻止仍在禁言期的用户发言。</li>
+              <li>增加白昼 / 极夜主题切换，并记住用户的主题偏好。</li>
+              <li>成员按角色排序，限制管理员之间互相禁言。</li>
+            </ul>
+          </details>
+          <details class="release-version">
+            <summary><span>2.2.1b</span><small>禁言通知与解除</small></summary>
+            <ul>
+              <li>禁言表单增加理由；聊天室广播禁言通知，显示操作者、目标、时长和理由。</li>
+              <li>增加解除禁言确认流程与解除通知；操作和通知采用一致的数据库批次处理。</li>
+              <li>成员列表可直接显示“禁言”或“解除”操作状态。</li>
+            </ul>
+          </details>
+          <details class="release-version">
+            <summary><span>2.2.2b</span><small>禁言交互修正</small></summary>
+            <ul>
+              <li>修复同一成员列表内禁言状态没有同步、解除按钮误开禁言窗口的问题。</li>
+              <li>改进禁言弹窗、成员滚动条、桌面窗口尺寸与管理标签的对齐。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.3</span><small>在线状态与消息可靠性 · 最新修订 2.3.0b</small></summary>
+          <details class="release-version">
+            <summary><span>2.3.0b</span><small>成员在线状态</small></summary>
+            <ul>
+              <li>聊天室显示在线人数，成员列表显示在线 / 离线状态，并定时更新在线状态。</li>
+              <li>修复发送后即时刷新与轮询同时执行导致消息重复显示的问题。</li>
+              <li>防止连续按 Enter 或重复提交造成重复发送。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.4</span><small>头像与系统通知 · 最新修订 2.4.1b</small></summary>
+          <details class="release-version">
+            <summary><span>2.4.0b</span><small>头像更新与压缩</small></summary>
+            <ul>
+              <li>定时刷新成员头像，无需重新载入页面即可看到他人头像变化。</li>
+              <li>改进头像清晰度，并压缩图片至 100 KB 以内以适配存储限制。</li>
+              <li>将禁言、解除禁言通知结构化展示，突出角色、用户、操作、时长和理由。</li>
+            </ul>
+          </details>
+          <details class="release-version">
+            <summary><span>2.4.1b</span><small>角色标签与头像入口</small></summary>
+            <ul>
+              <li>增加 AI 用户角色与 AI 管理员复合角色；AI 管理员显示“管理”和“AI”两个标签并拥有管理权限。</li>
+              <li>修正角色排序、标签对齐和资料中的角色显示。</li>
+              <li>调整个人资料入口：仅点击头像打开其他用户资料，昵称不再触发。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.5</span><small>语言与界面偏好 · 最新修订 2.5.0b</small></summary>
+          <details class="release-version">
+            <summary><span>2.5.0b</span><small>英文与本地化</small></summary>
+            <ul>
+              <li>增加英文界面与语言偏好记忆；本地化登录注册、成员、资料、角色和管理界面。</li>
+              <li>按当前语言显示消息日期，并优化角色标签在语言切换后的刷新。</li>
+              <li>将主题和语言选项整理到“我的”资料窗口，并改进个人资料布局。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.6</span><small>聊天室交互 · 最新修订 2.6.1b</small></summary>
+          <details class="release-version">
+            <summary><span>2.6.0b</span><small>弹出动画与引用</small></summary>
+            <ul>
+              <li>聊天室卡片打开时增加轻量弹出动画。</li>
+              <li>可右键自己的或他人的消息进行引用；输入框上方显示引用预览，发送后在消息气泡中展示。</li>
+              <li>引用消息以安全文本方式渲染，并兼容原有纯文本消息。</li>
+            </ul>
+          </details>
+          <details class="release-version">
+            <summary><span>2.6.1b</span><small>引用与资料细节</small></summary>
+            <ul>
+              <li>为较长的引用内容增加易读的滚动区域和夜间主题样式。</li>
+              <li>改进“我的”资料窗口与引用预览布局。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.7</span><small>多语言与用户提及 · 最新修订 2.7.1b</small></summary>
+          <details class="release-version">
+            <summary><span>2.7.0b</span><small>日文、繁体中文与 @ 用户</small></summary>
+            <ul>
+              <li>界面语言扩展为简体中文、繁体中文、英文和日文。</li>
+              <li>增加 @ 用户按钮与输入联想；可按显示名筛选，并用键盘选择用户。</li>
+              <li>输入 @ 后继续输入即可过滤候选用户。</li>
+            </ul>
+          </details>
+          <details class="release-version">
+            <summary><span>2.7.1b</span><small>独立语言窗口与链接</small></summary>
+            <ul>
+              <li>语言选项改为独立窗口，选择语言后仍保留打开的“我的”窗口。</li>
+              <li>优化 GitHub 与 Bilibili 支持链接；悬停时不显示下划线，并统一链接样式。</li>
+              <li>登录页增加 Bilibili 反馈与学习交流入口。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.8</span><small>图标与界面整理 · 最新修订 2.8.0b</small></summary>
+          <details class="release-version">
+            <summary><span>2.8.0b</span><small>图标与界面整理</small></summary>
+            <ul>
+              <li>为 GitHub 与 Bilibili 链接加入 SVG 图标，并调整品牌颜色和尺寸。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.9</span><small>提及高亮与代码优化 · 最新修订 2.9.0b</small></summary>
+          <details class="release-version">
+            <summary><span>2.9.0b</span><small>消息提及与代码优化</small></summary>
+            <ul>
+              <li>为 GitHub 与 Bilibili 链接加入 SVG 图标，并调整品牌颜色和尺寸。</li>
+              <li>重构多语言映射、日期格式化与重复文案，降低维护成本。</li>
+              <li>让消息中的 @ 内容高亮显示；筛选候选时按 Enter 插入首位匹配用户。</li>
+              <li>修正键盘选中状态与 Enter 默认选择之间的视觉一致性。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.10</span><small>站点信息 · 最新修订 2.10.0b</small></summary>
+          <details class="release-version">
+            <summary><span>2.10.0b</span><small>网站图标与更新日志</small></summary>
+            <ul>
+              <li>使用与首页同目录的 kamshion.png 作为网站图标。</li>
+              <li>新增本更新日志页面，按主版本、次版本和修订版本逐层展开查看。</li>
+              <li>从登录和注册页面提供更新日志入口。</li>
+            </ul>
+          </details>
+        </details>
+      </details>
+    </section>
+
+    <footer class="changelog-footer">
+      <a href="index.html">返回极简聊窗</a>
+      <span>版本内容根据本次聊天室迭代记录整理；未提供发布日期的版本不显示日期。</span>
+    </footer>
+  </main>
+  <script>
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem('chat-theme') === 'night' ? 'night' : 'day';
+    } catch (error) {
+      console.error('无法读取已保存的主题偏好：', error);
+      document.documentElement.dataset.theme = 'day';
+    }
+  </script>
+</body>
+</html>
