@@ -302,21 +302,18 @@ export async function onRequest(context) {
       const addReasonDetails = details => {
         details.forEach(detail => {
           if (!detail || typeof detail !== 'object') return;
-          addReasonPart(detail.category);
           addReasonPart(detail.word);
           if (Array.isArray(detail.matches)) detail.matches.forEach(addReasonPart);
-          addReasonPart(detail.msg);
         });
       };
       if (provider === 'content-moderation') {
-        result.categories.forEach(addReasonPart);
         addReasonDetails(result.details);
+        if (reasonParts.length === 0) result.categories.forEach(addReasonPart);
       } else {
-        result.violation_categories.forEach(addReasonPart);
         result.violations.forEach(addReasonPart);
         addReasonDetails(result.details);
+        if (reasonParts.length === 0) result.violation_categories.forEach(addReasonPart);
       }
-      const aiReason = (reasonParts.join('、') || 'AI审核结果提示存在违规内容').slice(0, 500);
       const reportStatements = [db.prepare(`
         INSERT INTO reports (
           reporter_id, reported_user_id, message_id, review_type,
@@ -331,7 +328,7 @@ export async function onRequest(context) {
         JSON.stringify(result),
         Date.now()
       )];
-      if (isConfirmedViolation) {
+      if (isConfirmedViolation && reasonParts.length > 0) {
         const notificationTime = Date.now();
         reportStatements.push(db.prepare(`
           INSERT INTO messages (user_id, display_name, text, created_at)
@@ -347,7 +344,7 @@ export async function onRequest(context) {
           reported.message.user_id,
           session.user_id,
           provider === 'content-moderation' ? 'AI审核（接口1）' : 'AI审核（接口2）',
-          aiReason,
+          reasonParts.join('、').slice(0, 500),
           notificationTime
         ));
         reportStatements.push(db.prepare(`
@@ -362,10 +359,14 @@ export async function onRequest(context) {
     if (action === 'reviewReport') {
       const currentUser = await db.prepare("SELECT role FROM users WHERE id = ?").bind(session.user_id).first();
       if (!currentUser || !isModeratorRole(currentUser.role)) return json({ error: '没有举报审核权限' }, 403);
-      const { report_id, decision } = await request.json();
+      const { report_id, decision, violation_content } = await request.json();
       const reportId = Number(report_id);
+      const violationContent = typeof violation_content === 'string' ? violation_content.trim() : '';
       if (!Number.isSafeInteger(reportId) || reportId <= 0) return json({ error: '举报记录无效' }, 400);
       if (!['violation', 'normal'].includes(decision)) return json({ error: '审核结果无效' }, 400);
+      if (decision === 'violation' && (!violationContent || violationContent.length > 500)) {
+        return json({ error: '违规内容不能为空且不能超过500个字符' }, 400);
+      }
       const reviewedAt = Date.now();
       const results = await db.batch([
         db.prepare(`
@@ -381,7 +382,7 @@ export async function onRequest(context) {
           'targetName', COALESCE(reported.display_name, '未知用户'),
           'reporterName', COALESCE(reporter.display_name, '未知用户'),
           'actorName', COALESCE(reviewer.display_name, '未知用户'),
-          'reason', reports.reason
+          'reason', ?
         ), ?
         FROM reports
         LEFT JOIN users AS reported ON reported.id = reports.reported_user_id
@@ -393,7 +394,7 @@ export async function onRequest(context) {
           AND reports.reviewed_by = ?
           AND reports.reviewed_at = ?
           AND changes() > 0
-      `).bind(reviewedAt, reportId, session.user_id, reviewedAt),
+      `).bind(violationContent, reviewedAt, reportId, session.user_id, reviewedAt),
         db.prepare(`
         DELETE FROM messages
         WHERE id NOT IN (SELECT id FROM messages ORDER BY id DESC LIMIT 50)

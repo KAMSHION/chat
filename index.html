@@ -312,11 +312,11 @@
       <div class="ai-review-options" role="radiogroup" aria-label="选择AI审核接口">
         <label class="ai-review-option">
           <input type="radio" name="ai-review-provider" value="content-moderation">
-          <span><strong>AI审核（接口1）</strong><small>内容审核</small></span>
+          <span><strong>AI审核（接口1）</strong><small>AI审核（接口1）</small></span>
         </label>
         <label class="ai-review-option">
           <input type="radio" name="ai-review-provider" value="text-censor">
-          <span><strong>AI审核（接口2）</strong><small>文本审核</small></span>
+          <span><strong>AI审核（接口2）</strong><small>AI审核（接口2）</small></span>
         </label>
       </div>
       <p id="ai-review-status" class="report-status" role="status" aria-live="polite"></p>
@@ -346,6 +346,22 @@
         <button id="report-inbox-close" type="button" aria-label="关闭">×</button>
       </div>
       <div id="report-inbox-list" class="report-inbox-list" aria-live="polite"></div>
+    </dialog>
+
+    <dialog id="report-violation-dialog" aria-labelledby="report-violation-title">
+      <div class="members-dialog-header">
+        <div><h2 id="report-violation-title">确认违规审核</h2></div>
+        <button id="report-violation-close" type="button" aria-label="关闭">×</button>
+      </div>
+      <form id="report-violation-form" class="username-form">
+        <label for="report-violation-content">违规内容</label>
+        <textarea id="report-violation-content" maxlength="500" rows="4" placeholder="请填写确认的违规内容" required></textarea>
+        <p id="report-violation-status" role="status" aria-live="polite"></p>
+        <div class="btn-group">
+          <button id="report-violation-cancel" class="secondary-btn" type="button">取消</button>
+          <button id="report-violation-submit" class="primary-btn" type="submit">确认</button>
+        </div>
+      </form>
     </dialog>
 
     <dialog id="mute-dialog" aria-labelledby="mute-title">

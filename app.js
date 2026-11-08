@@ -20,6 +20,7 @@ let mentionFilteredUsers = [];
 let reportTarget = null;
 let reportReviewerId = null;
 let reportReviewerName = '';
+let pendingReportReview = null;
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 
@@ -91,6 +92,10 @@ const translations = {
   '暂无待审核举报': 'No reports pending review',
   '举报已提交': 'Report submitted',
   'AI审核结果': 'AI review result',
+  '确认违规审核': 'Confirm violation review',
+  '违规内容': 'Violation content',
+  '请填写确认的违规内容': 'Enter the confirmed violation content',
+  '违规内容不能为空且不能超过500个字符': 'Violation content is required and must be 500 characters or fewer',
   'AI审核接口': 'AI review API',
   '审核结论': 'Review conclusion',
   '风险等级': 'Risk level',
@@ -325,6 +330,10 @@ const localeTranslations = {
     '暂无待审核举报': '審査待ちの報告はありません',
     '举报已提交': '報告を送信しました',
     'AI审核结果': 'AI審査結果',
+    '确认违规审核': '違反内容の審査を確定',
+    '违规内容': '違反内容',
+    '请填写确认的违规内容': '確認した違反内容を入力してください',
+    '违规内容不能为空且不能超过500个字符': '違反内容を入力してください（500文字以内）',
     'AI审核接口': 'AI審査 API',
     '审核结论': '審査結果',
     '风险等级': 'リスクレベル',
@@ -561,6 +570,10 @@ const localeTranslations = {
     '暂无待审核举报': '目前沒有待審核的檢舉',
     '举报已提交': '檢舉已提交',
     'AI审核结果': 'AI 審核結果',
+    '确认违规审核': '確認違規審核',
+    '违规内容': '違規內容',
+    '请填写确认的违规内容': '請填寫確認的違規內容',
+    '违规内容不能为空且不能超过500个字符': '違規內容不得空白且不能超過 500 個字元',
     'AI审核接口': 'AI 審核介面',
     '审核结论': '審核結論',
     '风险等级': '風險等級',
@@ -1328,6 +1341,16 @@ async function loadReportInbox() {
 }
 
 async function reviewReport(reportId, decision, button) {
+  if (decision === 'violation') {
+    pendingReportReview = { reportId, button };
+    document.getElementById('report-violation-form').reset();
+    document.getElementById('report-violation-status').textContent = '';
+    document.getElementById('report-inbox-dialog').close();
+    document.getElementById('report-violation-dialog').showModal();
+    document.getElementById('report-violation-content').focus();
+    return;
+  }
+
   button.disabled = true;
   try {
     const response = await api('reviewReport', 'POST', {
@@ -1340,6 +1363,42 @@ async function reviewReport(reportId, decision, button) {
     button.disabled = false;
     alert(localizeText(error.message) || localizeText('审核失败，请稍后重试。'));
     console.error('处理举报审核失败：', error);
+  }
+}
+
+async function submitViolationReview(event) {
+  event.preventDefault();
+  if (!pendingReportReview) return;
+
+  const { reportId, button } = pendingReportReview;
+  const content = document.getElementById('report-violation-content').value.trim();
+  const status = document.getElementById('report-violation-status');
+  const submit = document.getElementById('report-violation-submit');
+  status.textContent = '';
+  if (!content || content.length > 500) {
+    status.textContent = localizeText('违规内容不能为空且不能超过500个字符');
+    return;
+  }
+
+  submit.disabled = true;
+  try {
+    const response = await api('reviewReport', 'POST', {
+      report_id: reportId,
+      decision: 'violation',
+      violation_content: content
+    });
+    if (response.error) throw new Error(response.error);
+
+    pendingReportReview = null;
+    document.getElementById('report-violation-dialog').close();
+    document.getElementById('report-inbox-dialog').showModal();
+    button.disabled = true;
+    await loadReportInbox();
+  } catch (error) {
+    status.textContent = localizeText(error.message) || localizeText('审核失败，请稍后重试。');
+    console.error('提交违规审核失败：', error);
+  } finally {
+    submit.disabled = false;
   }
 }
 
@@ -2497,6 +2556,20 @@ document.addEventListener('DOMContentLoaded', () => {
     loadReportInbox();
   });
   document.getElementById('report-inbox-close').addEventListener('click', () => document.getElementById('report-inbox-dialog').close());
+  document.getElementById('report-violation-close').addEventListener('click', () => {
+    document.getElementById('report-violation-dialog').close();
+  });
+  document.getElementById('report-violation-cancel').addEventListener('click', () => {
+    document.getElementById('report-violation-dialog').close();
+  });
+  document.getElementById('report-violation-dialog').addEventListener('close', () => {
+    if (!pendingReportReview) return;
+    const { button } = pendingReportReview;
+    pendingReportReview = null;
+    document.getElementById('report-inbox-dialog').showModal();
+    button.focus();
+  });
+  document.getElementById('report-violation-form').addEventListener('submit', submitViolationReview);
   document.getElementById('reply-cancel-btn').addEventListener('click', clearReplyPreview);
   document.addEventListener('click', event => {
     if (!contextMenu.contains(event.target)) closeMessageContextMenu();
