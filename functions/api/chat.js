@@ -293,26 +293,16 @@ export async function onRequest(context) {
       const isConfirmedViolation = provider === 'content-moderation'
         ? result.is_pass === false
         : result.is_compliant === false && result.is_suspected === false;
-      const reasonParts = [];
-      const addReasonPart = value => {
+      const violationCategories = [];
+      const addViolationCategory = value => {
         if (typeof value !== 'string') return;
         const part = value.trim().slice(0, 160);
-        if (part && !reasonParts.includes(part)) reasonParts.push(part);
-      };
-      const addReasonDetails = details => {
-        details.forEach(detail => {
-          if (!detail || typeof detail !== 'object') return;
-          addReasonPart(detail.word);
-          if (Array.isArray(detail.matches)) detail.matches.forEach(addReasonPart);
-        });
+        if (part && !violationCategories.includes(part)) violationCategories.push(part);
       };
       if (provider === 'content-moderation') {
-        addReasonDetails(result.details);
-        if (reasonParts.length === 0) result.categories.forEach(addReasonPart);
+        result.categories.forEach(addViolationCategory);
       } else {
-        result.violations.forEach(addReasonPart);
-        addReasonDetails(result.details);
-        if (reasonParts.length === 0) result.violation_categories.forEach(addReasonPart);
+        result.violation_categories.forEach(addViolationCategory);
       }
       const reportStatements = [db.prepare(`
         INSERT INTO reports (
@@ -328,7 +318,7 @@ export async function onRequest(context) {
         JSON.stringify(result),
         Date.now()
       )];
-      if (isConfirmedViolation && reasonParts.length > 0) {
+      if (isConfirmedViolation && violationCategories.length > 0) {
         const notificationTime = Date.now();
         reportStatements.push(db.prepare(`
           INSERT INTO messages (user_id, display_name, text, created_at)
@@ -344,7 +334,7 @@ export async function onRequest(context) {
           reported.message.user_id,
           session.user_id,
           provider === 'content-moderation' ? 'AI审核（接口1）' : 'AI审核（接口2）',
-          reasonParts.join('、').slice(0, 500),
+          violationCategories.join('、').slice(0, 500),
           notificationTime
         ));
         reportStatements.push(db.prepare(`
