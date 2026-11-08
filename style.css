@@ -427,6 +427,12 @@ textarea:focus-visible {
 #my-dialog,
 #language-dialog,
 #user-info-dialog,
+#report-dialog,
+#reviewer-dialog,
+#submit-report-dialog,
+#ai-review-dialog,
+#ai-result-dialog,
+#report-inbox-dialog,
 #mute-dialog,
 #change-password-dialog,
 #unmute-dialog {
@@ -445,6 +451,20 @@ textarea:focus-visible {
   width: min(520px, calc(100% - 32px));
 }
 
+#reviewer-dialog,
+#submit-report-dialog,
+#ai-review-dialog {
+  width: min(460px, calc(100% - 32px));
+}
+
+#report-inbox-dialog {
+  width: min(640px, calc(100% - 32px));
+}
+
+#report-inbox-btn[hidden] {
+  display: none;
+}
+
 #language-dialog {
   width: min(340px, calc(100% - 32px));
 }
@@ -453,6 +473,12 @@ textarea:focus-visible {
 #my-dialog::backdrop,
 #language-dialog::backdrop,
 #user-info-dialog::backdrop,
+#report-dialog::backdrop,
+#reviewer-dialog::backdrop,
+#submit-report-dialog::backdrop,
+#ai-review-dialog::backdrop,
+#ai-result-dialog::backdrop,
+#report-inbox-dialog::backdrop,
 #mute-dialog::backdrop,
 #change-password-dialog::backdrop,
 #unmute-dialog::backdrop {
@@ -483,6 +509,12 @@ textarea:focus-visible {
 #my-dialog #my-dialog-close,
 #language-dialog #language-dialog-close,
 #user-info-dialog #user-info-close,
+#report-dialog #report-dialog-close,
+#reviewer-dialog #reviewer-dialog-close,
+#submit-report-dialog #submit-report-close,
+#ai-review-dialog #ai-review-close,
+#ai-result-dialog #ai-result-close,
+#report-inbox-dialog #report-inbox-close,
 #mute-dialog #mute-dialog-close,
 #change-password-dialog #change-password-close,
 #unmute-dialog #unmute-dialog-close {
@@ -1608,11 +1640,240 @@ textarea:focus-visible {
   text-align: left;
 }
 
+.message-context-menu #report-message-btn {
+  border-top: 1px solid #edf0f5;
+  border-radius: 0 0 6px 6px;
+  color: #b64952;
+}
+
+.message-context-menu #report-message-btn:hover,
+.message-context-menu #report-message-btn:focus-visible {
+  color: #a93640;
+  background: #fff1f1;
+}
+
 .message-context-menu button:hover,
 .message-context-menu button:focus-visible {
   color: #4059ca;
   background: #f0f3ff;
   outline: none;
+}
+
+.report-dialog-content,
+.ai-review-options {
+  padding: 18px 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.report-choice {
+  min-height: 68px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid #e3e7ef;
+  border-radius: 12px;
+  color: #34425e;
+  background: #fbfcfe;
+  text-align: left;
+}
+
+.report-choice:hover,
+.report-choice:focus-visible {
+  border-color: #b9c4fa;
+  background: #f3f5ff;
+}
+
+.report-choice strong {
+  font-size: 14px;
+}
+
+.report-choice span,
+.ai-review-option small {
+  color: #8791a5;
+  font-size: 12px;
+}
+
+.reviewer-list,
+.report-inbox-list {
+  max-height: min(440px, calc(80vh - 180px));
+  padding: 10px 14px;
+  overflow: auto;
+}
+
+.reviewer-option {
+  min-height: 48px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 9px;
+  color: #39445a;
+  cursor: pointer;
+}
+
+.reviewer-identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reviewer-option button {
+  min-height: 31px;
+  margin-left: auto;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--blue);
+  font-size: 12px;
+}
+
+.reviewer-option button:hover {
+  background: var(--blue-dark);
+}
+
+.reviewer-option:hover {
+  background: #f4f6fb;
+}
+
+.reviewer-option input,
+.ai-review-option input {
+  accent-color: var(--blue);
+}
+
+.reviewer-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-dialog-actions {
+  padding: 12px 20px 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.report-dialog-actions button {
+  min-height: 36px;
+  padding: 0 15px;
+  border: 1px solid #e0e5ef;
+  border-radius: 9px;
+}
+
+.report-status {
+  min-height: 18px;
+  margin: 0;
+  padding: 0 20px;
+  color: #c04e55;
+  font-size: 12px;
+}
+
+.ai-review-option {
+  min-height: 58px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid #e3e7ef;
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.ai-review-option:focus-within {
+  border-color: #aab7f7;
+  background: #f3f5ff;
+}
+
+.ai-review-option span {
+  display: grid;
+  gap: 3px;
+  color: #34425e;
+  font-size: 13px;
+}
+
+.ai-result-content {
+  max-height: min(440px, 60vh);
+  padding: 18px 20px;
+  overflow: auto;
+  color: #536078;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.ai-result-content strong {
+  color: #34425e;
+}
+
+.ai-result-content ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.report-inbox-item {
+  padding: 13px;
+  border: 1px solid #e5e9f1;
+  border-radius: 12px;
+  color: #566178;
+  font-size: 12px;
+}
+
+.report-inbox-item + .report-inbox-item {
+  margin-top: 10px;
+}
+
+.report-inbox-item h3 {
+  margin: 0 0 7px;
+  color: #34425e;
+  font-size: 14px;
+}
+
+.report-inbox-item p {
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.report-inbox-message {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f5f7fb;
+}
+
+.report-inbox-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.report-inbox-actions button {
+  min-height: 31px;
+  padding: 0 11px;
+  border: 1px solid #e1e6ef;
+  border-radius: 8px;
+}
+
+.report-inbox-actions .report-violation {
+  border-color: #f0d4d5;
+  color: #b64952;
+  background: #fff7f7;
+}
+
+.report-inbox-actions .report-normal {
+  border-color: #cde8da;
+  color: #27885f;
+  background: #f2fbf6;
+}
+
+.report-empty {
+  padding: 18px 8px;
+  color: #8791a5;
+  font-size: 13px;
+  text-align: center;
 }
 
 .composer:focus-within {
@@ -2099,10 +2360,21 @@ html[data-theme="night"] .message-context-menu button {
   color: #d2d9e6;
 }
 
+html[data-theme="night"] .message-context-menu #report-message-btn {
+  border-color: #303a4b;
+  color: #ef969b;
+}
+
 html[data-theme="night"] .message-context-menu button:hover,
 html[data-theme="night"] .message-context-menu button:focus-visible {
   color: #c0caff;
   background: #303b4d;
+}
+
+html[data-theme="night"] .message-context-menu #report-message-btn:hover,
+html[data-theme="night"] .message-context-menu #report-message-btn:focus-visible {
+  color: #ffb1b5;
+  background: #422c36;
 }
 
 html[data-theme="night"] #msg-input {
@@ -2116,6 +2388,12 @@ html[data-theme="night"] .composer-footer {
 html[data-theme="night"] #members-dialog,
 html[data-theme="night"] #my-dialog,
 html[data-theme="night"] #user-info-dialog,
+html[data-theme="night"] #report-dialog,
+html[data-theme="night"] #reviewer-dialog,
+html[data-theme="night"] #submit-report-dialog,
+html[data-theme="night"] #ai-review-dialog,
+html[data-theme="night"] #ai-result-dialog,
+html[data-theme="night"] #report-inbox-dialog,
 html[data-theme="night"] #mute-dialog,
 html[data-theme="night"] #change-password-dialog,
 html[data-theme="night"] #unmute-dialog {
@@ -2139,11 +2417,77 @@ html[data-theme="night"] .members-dialog-header p {
 html[data-theme="night"] #members-dialog #members-close,
 html[data-theme="night"] #my-dialog #my-dialog-close,
 html[data-theme="night"] #user-info-dialog #user-info-close,
+html[data-theme="night"] #report-dialog #report-dialog-close,
+html[data-theme="night"] #reviewer-dialog #reviewer-dialog-close,
+html[data-theme="night"] #submit-report-dialog #submit-report-close,
+html[data-theme="night"] #ai-review-dialog #ai-review-close,
+html[data-theme="night"] #ai-result-dialog #ai-result-close,
+html[data-theme="night"] #report-inbox-dialog #report-inbox-close,
 html[data-theme="night"] #mute-dialog #mute-dialog-close,
 html[data-theme="night"] #change-password-dialog #change-password-close,
 html[data-theme="night"] #unmute-dialog #unmute-dialog-close {
   color: #c5cede;
   background: #303b4d;
+}
+
+html[data-theme="night"] .report-choice,
+html[data-theme="night"] .ai-review-option,
+html[data-theme="night"] .report-inbox-item {
+  border-color: #3b4659;
+  color: #d7deea;
+  background: #202a3a;
+}
+
+html[data-theme="night"] .report-choice:hover,
+html[data-theme="night"] .report-choice:focus-visible,
+html[data-theme="night"] .reviewer-option:hover,
+html[data-theme="night"] .ai-review-option:focus-within {
+  border-color: #53649d;
+  background: #28334a;
+}
+
+html[data-theme="night"] .reviewer-option,
+html[data-theme="night"] .ai-review-option span {
+  color: #d7deea;
+}
+
+html[data-theme="night"] .report-inbox-item h3,
+html[data-theme="night"] .ai-result-content strong {
+  color: #e0e6f0;
+}
+
+html[data-theme="night"] .report-inbox-message {
+  background: #151d29;
+}
+
+html[data-theme="night"] .ai-result-content,
+html[data-theme="night"] .report-inbox-item {
+  color: #aab5c8;
+}
+
+html[data-theme="night"] .report-dialog-actions button:not(.primary-btn),
+html[data-theme="night"] .report-inbox-actions button {
+  border-color: #3b4659;
+  color: #d7deea;
+  background: #222d3d;
+}
+
+html[data-theme="night"] .report-inbox-actions .report-violation {
+  border-color: #684047;
+  color: #f0a8ae;
+  background: #39282f;
+}
+
+html[data-theme="night"] .report-inbox-actions .report-normal {
+  border-color: #365b4e;
+  color: #8ed4b5;
+  background: #253b35;
+}
+
+html[data-theme="night"] .report-choice span,
+html[data-theme="night"] .ai-review-option small,
+html[data-theme="night"] .report-empty {
+  color: #9ca8bb;
 }
 
 html[data-theme="night"] .member-item:hover {

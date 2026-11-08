@@ -1,4 +1,4 @@
-import { countGbkBytes } from '../../gbk.mjs';
+import { countDisplayWidth } from '../../display-width.mjs';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -7,6 +7,26 @@ export async function onRequest(context) {
   const db = env.DB;
 
   const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+  const isModeratorRole = role => ['super_admin', 'admin', 'ai_admin'].includes(role);
+  const reportableMessage = async (messageId, reporterId) => {
+    const message = await db.prepare(`
+      SELECT id, user_id, display_name, text
+      FROM messages
+      WHERE id = ? AND user_id != 0
+    `).bind(messageId).first();
+    if (!message) return { error: json({ error: '举报的消息不存在或已过期' }, 404) };
+    if (Number(message.user_id) === Number(reporterId)) return { error: json({ error: '不能举报自己的消息' }, 400) };
+    let messageText = message.text;
+    try {
+      const payload = JSON.parse(message.text);
+      if (payload?.type === 'chat_quote_v1' && typeof payload.text === 'string') {
+        messageText = payload.text;
+      }
+    } catch {
+      // Older messages are stored as plain text.
+    }
+    return { message, messageText };
+  };
   async function hashPassword(password, salt) {
     const enc = new TextEncoder();
     const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveBits', 'deriveKey']);
@@ -21,8 +41,7 @@ export async function onRequest(context) {
       const normalizedAccount = typeof account === 'string' ? account.trim() : '';
       const displayName = typeof display_name === 'string' ? display_name.trim() : '';
       if (!normalizedAccount || !displayName || typeof password !== 'string' || !password) return json({ error: '账户名、用户名和密码不能为空' }, 400);
-      const displayNameBytes = countGbkBytes(displayName);
-      if (normalizedAccount.length > 30 || displayNameBytes === null || displayNameBytes > 24) return json({ error: '账户名最多30个字符，昵称须为GBK可表示字符且不能超过24字节' }, 400);
+      if (normalizedAccount.length > 30 || countDisplayWidth(displayName) > 24) return json({ error: '账户名最多30个字符，昵称长度不能超过24（半角1，全角2）' }, 400);
       if (!/^[A-Za-z0-9_$]+$/.test(normalizedAccount)) return json({ error: '账户名只能包含大小写英文字母、数字、下划线和美元符号（$）' }, 400);
       const count = await db.prepare("SELECT COUNT(*) as c FROM users").first();
       if (count.c >= 100) return json({ error: '注册名额已满(100人)' }, 403);
@@ -132,6 +151,259 @@ export async function onRequest(context) {
       return json({ users: results, onlineCount: online.count });
     }
 
+    if (action === 'getPendingReports') {
+      const currentUser = await db.prepare("SELECT role FROM users WHERE id = ?").bind(session.user_id).first();
+      if (!currentUser || !isModeratorRole(currentUser.role)) return json({ error: '没有举报审核权限' }, 403);
+      const { results } = await db.prepare(`
+        SELECT reports.id, reports.reporter_id, reports.reported_user_id,
+          reports.message_id, reports.reason, reports.message_text, reports.created_at,
+          reporter.display_name AS reporter_name, reported.display_name AS reported_name
+        FROM reports
+        LEFT JOIN users AS reporter ON reporter.id = reports.reporter_id
+        LEFT JOIN users AS reported ON reported.id = reports.reported_user_id
+        WHERE reports.status = 'pending'
+          AND reports.review_type = 'manual'
+          AND reports.reviewer_id = ?
+        ORDER BY reports.created_at ASC
+        LIMIT 100
+      `).bind(session.user_id).all();
+      return json({ reports: results });
+    }
+
+    if (action === 'submitReport') {
+      const { message_id, reviewer_id, reason } = await request.json();
+      const messageId = Number(message_id);
+      const reviewerId = Number(reviewer_id);
+      const reportReason = typeof reason === 'string' ? reason.trim() : '';
+      if (!Number.isSafeInteger(messageId) || messageId <= 0) return json({ error: '举报的消息无效' }, 400);
+      if (!Number.isSafeInteger(reviewerId) || reviewerId <= 0) return json({ error: '请选择审核员' }, 400);
+      if (!reportReason || reportReason.length > 500) return json({ error: '举报理由不能为空且不能超过500个字符' }, 400);
+      const reviewer = await db.prepare("SELECT id, role FROM users WHERE id = ?").bind(reviewerId).first();
+      if (!reviewer || !isModeratorRole(reviewer.role)) return json({ error: '所选审核员无效' }, 400);
+      const reported = await reportableMessage(messageId, session.user_id);
+      if (reported.error) return reported.error;
+      const createdAt = Date.now();
+      const inserted = await db.prepare(`
+        INSERT INTO reports (
+          reporter_id, reported_user_id, message_id, reviewer_id, review_type,
+          status, reason, message_text, created_at
+        ) VALUES (?, ?, ?, ?, 'manual', 'pending', ?, ?, ?)
+        RETURNING id
+      `).bind(
+        session.user_id,
+        reported.message.user_id,
+        reported.message.id,
+        reviewerId,
+        reportReason,
+        reported.messageText,
+        createdAt
+      ).first();
+      return json({ success: true, reportId: inserted.id });
+    }
+
+    if (action === 'submitAiReport') {
+      const { message_id, provider } = await request.json();
+      const messageId = Number(message_id);
+      if (!Number.isSafeInteger(messageId) || messageId <= 0) return json({ error: '举报的消息无效' }, 400);
+      if (!['content-moderation', 'text-censor'].includes(provider)) return json({ error: 'AI审核接口无效' }, 400);
+      const reported = await reportableMessage(messageId, session.user_id);
+      if (reported.error) return reported.error;
+      if (reported.messageText.length === 0 || reported.messageText.length > 5000) return json({ error: '消息长度不符合AI审核接口要求' }, 400);
+      if (!env.APIZERO_API_KEY) return json({ error: 'AI审核服务尚未配置，请联系网站管理员' }, 503);
+
+      const endpoint = provider === 'content-moderation'
+        ? 'https://v1.apizero.cn/api/content-moderation'
+        : 'https://v1.apizero.cn/api/text-censor';
+      const requestBody = provider === 'content-moderation'
+        ? { action: 'moderate', text: reported.messageText, mask: false }
+        : { text: reported.messageText };
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20_000);
+      let providerResponse;
+      try {
+        providerResponse = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${env.APIZERO_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
+      } catch (error) {
+        if (error?.name === 'AbortError') {
+          return json({ error: 'AI审核服务响应超时，请稍后重试' }, 504);
+        }
+        return json({ error: '无法连接AI审核服务，请稍后重试' }, 502);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      if (!providerResponse.ok) return json({ error: 'AI审核服务暂时不可用，请稍后重试' }, 502);
+      let providerPayload;
+      try {
+        providerPayload = await providerResponse.json();
+      } catch {
+        return json({ error: 'AI审核服务返回了无效响应，请稍后重试' }, 502);
+      }
+      if (!providerPayload || typeof providerPayload !== 'object' || providerPayload.code !== 0 || !providerPayload.data) {
+        return json({ error: providerPayload?.msg || 'AI审核未能完成，请稍后重试' }, 502);
+      }
+
+      let result;
+      if (provider === 'content-moderation') {
+        if (
+          typeof providerPayload.data.is_pass !== 'boolean' ||
+          typeof providerPayload.data.risk_level !== 'string' ||
+          !Array.isArray(providerPayload.data.categories) ||
+          !Array.isArray(providerPayload.data.details)
+        ) {
+          return json({ error: 'AI审核服务返回了无法识别的结果' }, 502);
+        }
+        result = {
+          is_pass: providerPayload.data.is_pass,
+          risk_level: providerPayload.data.risk_level,
+          categories: providerPayload.data.categories,
+          details: providerPayload.data.details
+        };
+      } else {
+        if (
+          typeof providerPayload.data.conclusion !== 'string' ||
+          !Number.isSafeInteger(providerPayload.data.conclusion_type) ||
+          typeof providerPayload.data.is_compliant !== 'boolean' ||
+          typeof providerPayload.data.is_suspected !== 'boolean' ||
+          !Number.isSafeInteger(providerPayload.data.violation_count) ||
+          !Array.isArray(providerPayload.data.violation_categories) ||
+          !Array.isArray(providerPayload.data.violations) ||
+          !Array.isArray(providerPayload.data.details)
+        ) {
+          return json({ error: 'AI审核服务返回了无法识别的结果' }, 502);
+        }
+        result = {
+          conclusion: providerPayload.data.conclusion,
+          conclusion_type: providerPayload.data.conclusion_type,
+          is_compliant: providerPayload.data.is_compliant,
+          is_suspected: providerPayload.data.is_suspected,
+          violation_count: providerPayload.data.violation_count,
+          violation_categories: providerPayload.data.violation_categories,
+          violations: providerPayload.data.violations,
+          details: providerPayload.data.details
+        };
+      }
+
+      const isConfirmedViolation = provider === 'content-moderation'
+        ? result.is_pass === false
+        : result.is_compliant === false && result.is_suspected === false;
+      const reasonParts = [];
+      const addReasonPart = value => {
+        if (typeof value !== 'string') return;
+        const part = value.trim().slice(0, 160);
+        if (part && !reasonParts.includes(part)) reasonParts.push(part);
+      };
+      const addReasonDetails = details => {
+        details.forEach(detail => {
+          if (!detail || typeof detail !== 'object') return;
+          addReasonPart(detail.category);
+          addReasonPart(detail.word);
+          if (Array.isArray(detail.matches)) detail.matches.forEach(addReasonPart);
+          addReasonPart(detail.msg);
+        });
+      };
+      if (provider === 'content-moderation') {
+        result.categories.forEach(addReasonPart);
+        addReasonDetails(result.details);
+      } else {
+        result.violation_categories.forEach(addReasonPart);
+        result.violations.forEach(addReasonPart);
+        addReasonDetails(result.details);
+      }
+      const aiReason = (reasonParts.join('、') || 'AI审核结果提示存在违规内容').slice(0, 500);
+      const reportStatements = [db.prepare(`
+        INSERT INTO reports (
+          reporter_id, reported_user_id, message_id, review_type,
+          status, message_text, ai_result, created_at
+        ) VALUES (?, ?, ?, ?, 'ai_reviewed', ?, ?, ?)
+      `).bind(
+        session.user_id,
+        reported.message.user_id,
+        reported.message.id,
+        provider,
+        reported.messageText,
+        JSON.stringify(result),
+        Date.now()
+      )];
+      if (isConfirmedViolation) {
+        const notificationTime = Date.now();
+        reportStatements.push(db.prepare(`
+          INSERT INTO messages (user_id, display_name, text, created_at)
+          SELECT 0, '[通知]', json_object(
+            'type', 'moderation',
+            'action', 'report_violation',
+            'targetName', COALESCE((SELECT display_name FROM users WHERE id = ?), '未知用户'),
+            'reporterName', COALESCE((SELECT display_name FROM users WHERE id = ?), '未知用户'),
+            'actorName', ?,
+            'reason', ?
+          ), ?
+        `).bind(
+          reported.message.user_id,
+          session.user_id,
+          provider === 'content-moderation' ? 'AI审核（接口1）' : 'AI审核（接口2）',
+          aiReason,
+          notificationTime
+        ));
+        reportStatements.push(db.prepare(`
+          DELETE FROM messages
+          WHERE id NOT IN (SELECT id FROM messages ORDER BY id DESC LIMIT 50)
+        `));
+      }
+      await db.batch(reportStatements);
+      return json({ success: true, provider, result });
+    }
+
+    if (action === 'reviewReport') {
+      const currentUser = await db.prepare("SELECT role FROM users WHERE id = ?").bind(session.user_id).first();
+      if (!currentUser || !isModeratorRole(currentUser.role)) return json({ error: '没有举报审核权限' }, 403);
+      const { report_id, decision } = await request.json();
+      const reportId = Number(report_id);
+      if (!Number.isSafeInteger(reportId) || reportId <= 0) return json({ error: '举报记录无效' }, 400);
+      if (!['violation', 'normal'].includes(decision)) return json({ error: '审核结果无效' }, 400);
+      const reviewedAt = Date.now();
+      const results = await db.batch([
+        db.prepare(`
+        UPDATE reports
+        SET status = 'reviewed', decision = ?, reviewed_by = ?, reviewed_at = ?
+        WHERE id = ? AND reviewer_id = ? AND review_type = 'manual' AND status = 'pending'
+      `).bind(decision, session.user_id, reviewedAt, reportId, session.user_id),
+        db.prepare(`
+        INSERT INTO messages (user_id, display_name, text, created_at)
+        SELECT 0, '[通知]', json_object(
+          'type', 'moderation',
+          'action', 'report_violation',
+          'targetName', COALESCE(reported.display_name, '未知用户'),
+          'reporterName', COALESCE(reporter.display_name, '未知用户'),
+          'actorName', COALESCE(reviewer.display_name, '未知用户'),
+          'reason', reports.reason
+        ), ?
+        FROM reports
+        LEFT JOIN users AS reported ON reported.id = reports.reported_user_id
+        LEFT JOIN users AS reporter ON reporter.id = reports.reporter_id
+        LEFT JOIN users AS reviewer ON reviewer.id = reports.reviewed_by
+        WHERE reports.id = ?
+          AND reports.status = 'reviewed'
+          AND reports.decision = 'violation'
+          AND reports.reviewed_by = ?
+          AND reports.reviewed_at = ?
+          AND changes() > 0
+      `).bind(reviewedAt, reportId, session.user_id, reviewedAt),
+        db.prepare(`
+        DELETE FROM messages
+        WHERE id NOT IN (SELECT id FROM messages ORDER BY id DESC LIMIT 50)
+          AND changes() > 0
+      `)
+      ]);
+      if (!results[0].meta?.changes) return json({ error: '举报已处理或不属于当前审核员' }, 409);
+      return json({ success: true });
+    }
+
     if (action === 'muteUser') {
       const moderator = await db.prepare("SELECT display_name, role FROM users WHERE id = ?").bind(session.user_id).first();
       if (!moderator || !['super_admin', 'admin', 'ai_admin'].includes(moderator.role)) return json({ error: '没有禁言权限' }, 403);
@@ -202,8 +474,7 @@ export async function onRequest(context) {
       const { display_name } = await request.json();
       const displayName = typeof display_name === 'string' ? display_name.trim() : '';
       if (!displayName) return json({ error: '用户名不能为空' }, 400);
-      const displayNameBytes = countGbkBytes(displayName);
-      if (displayNameBytes === null || displayNameBytes > 24) return json({ error: '昵称须为GBK可表示字符且不能超过24字节' }, 400);
+      if (countDisplayWidth(displayName) > 24) return json({ error: '昵称长度不能超过24（半角1，全角2）' }, 400);
       await db.batch([
         db.prepare("UPDATE users SET display_name = ? WHERE id = ?").bind(displayName, session.user_id),
         db.prepare("UPDATE messages SET display_name = ? WHERE user_id = ?").bind(displayName, session.user_id)

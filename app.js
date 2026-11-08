@@ -17,6 +17,9 @@ let contextMenuMessage = null;
 let mentionStartIndex = -1;
 let mentionActiveIndex = 0;
 let mentionFilteredUsers = [];
+let reportTarget = null;
+let reportReviewerId = null;
+let reportReviewerName = '';
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 
@@ -62,6 +65,67 @@ const translations = {
   '引用': 'Quote',
   '引用:': 'Replying to:',
   '取消引用': 'Cancel quote',
+  '举报': 'Report',
+  '举报用户': 'Report user',
+  '举报用户{name}': 'Report {name}',
+  '人工审核': 'Human review',
+  '选择一位管理或超管进行审核': 'Choose an admin or super admin to review the report',
+  '使用第三方 AI 内容审核接口': 'Use a third-party AI moderation API',
+  '选择审核员': 'Select a reviewer',
+  '提交举报': 'Submit report',
+  '举报理由': 'Reason for report',
+  'AI智能处理': 'AI moderation',
+  'AI审核（接口1）': 'AI审核（接口1）',
+  'AI审核（接口2）': 'AI审核（接口2）',
+  '提交审核': 'Submit for review',
+  '举报审核邮件': 'Report inbox',
+  '待审核': 'Pending review',
+  '消息内容': 'Message',
+  '举报人': 'Reporter',
+  '提交': 'Submit',
+  '违规': 'Violation',
+  '正常': 'Normal',
+  '未知': 'Unknown',
+  '无': 'None',
+  '完成': 'Done',
+  '暂无待审核举报': 'No reports pending review',
+  '举报已提交': 'Report submitted',
+  'AI审核结果': 'AI review result',
+  'AI审核接口': 'AI review API',
+  '审核结论': 'Review conclusion',
+  '风险等级': 'Risk level',
+  '命中类别': 'Matched categories',
+  '命中内容': 'Matched content',
+  '内容审核': 'Content moderation',
+  '文本审核': 'Text moderation',
+  '提交后，所选消息内容会发送至对应的第三方审核接口。': 'The selected message will be sent to the chosen third-party moderation API.',
+  '本次消息内容会发送至所选第三方审核接口。': 'This message will be sent to the selected third-party moderation API.',
+  '暂无可选审核员': 'No reviewers are available',
+  '请选择审核员': 'Select a reviewer',
+  '请选择AI审核接口': 'Select an AI review API',
+  '不能举报自己的消息': 'You cannot report your own message',
+  '举报的消息不存在或已过期': 'The reported message no longer exists',
+  '没有举报审核权限': 'You do not have permission to review reports',
+  '举报审核加载失败': 'Failed to load report inbox',
+  '举报的消息无效': 'Invalid message to report',
+  '举报理由不能为空且不能超过500个字符': 'A report reason is required and must be 500 characters or fewer',
+  '所选审核员无效': 'The selected reviewer is invalid',
+  'AI审核接口无效': 'Invalid AI review API',
+  '消息长度不符合AI审核接口要求': 'Message length is outside the AI review API limits',
+  'AI审核服务尚未配置，请联系网站管理员': 'AI review is not configured. Contact the site administrator.',
+  'AI审核服务暂时不可用，请稍后重试': 'AI review is temporarily unavailable. Try again later.',
+  'AI审核未能完成，请稍后重试': 'AI review could not be completed. Try again later.',
+  '审核结果无效': 'Invalid review decision',
+  '举报记录无效': 'Invalid report',
+  '举报已处理或不属于当前审核员': 'This report was already handled or is assigned to another reviewer',
+  '举报提交失败，请检查网络后重试。': 'Report submission failed. Check your connection and try again.',
+  '审核失败，请稍后重试。': 'Review failed. Try again later.',
+  '举报提交者：': 'Reported by: ',
+  '举报理由：': 'Reason: ',
+  '审核结论：': 'Conclusion: ',
+  '风险等级：': 'Risk level: ',
+  '命中类别：': 'Categories: ',
+  '命中内容：': 'Matches: ',
   '极简聊窗成员': 'Chat members',
   '正在加载...': 'Loading...',
   '关闭成员列表': 'Close members list',
@@ -98,6 +162,7 @@ const translations = {
   '解除禁言': 'Unmute',
   '确认解除该成员的禁言吗？': 'Are you sure you want to unmute this member?',
   '[通知]': '[Notice]',
+  '用户{reported}，因存在违规行为，被用户{reporter}举报，经{reviewer}核实，已确认该用户存在{reason}的行为': 'User {reported} was reported by {reporter} for misconduct. After review by {reviewer}, the user was confirmed to have engaged in {reason}.',
   ' 用户': ' User ',
   '已被 ': 'was muted by ',
   '的禁言已被 ': 'was unmuted by ',
@@ -150,7 +215,7 @@ const translations = {
   '账户名或密码错误': 'Incorrect account name or password',
   '账户名已存在': 'Account name already exists',
   '账户名、用户名和密码不能为空': 'Account name, display name, and password are required',
-  '账户名最多30个字符，昵称须为GBK可表示字符且不能超过24字节': 'Account names are limited to 30 characters; display names must use GBK-supported characters and fit within 24 bytes',
+  '账户名最多30个字符，昵称长度不能超过24（半角1，全角2）': 'Account names are limited to 30 characters; display name width is limited to 24 (half-width 1, full-width 2)',
   '注册名额已满(100人)': 'Registration is full (100 users)',
   '请完整填写当前密码和新密码': 'Enter your current and new passwords',
   '新密码不能超过128个字符': 'New password cannot exceed 128 characters',
@@ -168,7 +233,7 @@ const translations = {
   '管理只能解除普通用户或AI用户的禁言': 'Admins can only unmute regular or AI users',
   '不能解除超管的禁言': 'The owner cannot be unmuted',
   '该成员当前未被禁言': 'This member is not currently muted',
-  '昵称须为GBK可表示字符且不能超过24字节': 'Display names must use GBK-supported characters and fit within 24 bytes',
+  '昵称长度不能超过24（半角1，全角2）': 'Display name width cannot exceed 24 (half-width 1, full-width 2)',
   '头像必须压缩到100KB以内': 'Avatar must be compressed to under 100 KB',
   '消息不能为空且不能超过300字': 'Message cannot be empty or exceed 300 characters',
   '引用消息无效': 'Invalid quoted message',
@@ -183,6 +248,7 @@ const localeTranslations = {
   en: translations,
   ja: {
     '[通知]': '[通知]',
+    '用户{reported}，因存在违规行为，被用户{reporter}举报，经{reviewer}核实，已确认该用户存在{reason}的行为': '{reported}さんは迷惑行為のため{reporter}さんから報告され、{reviewer}さんの確認により{reason}の行為が認められました。',
     ' 用户': ' ユーザー',
     '已被 ': 'によってミュートされました: ',
     '的禁言已被 ': 'のミュートが解除されました: ',
@@ -233,6 +299,67 @@ const localeTranslations = {
     '引用': '引用',
     '引用:': '返信先:',
     '取消引用': '引用を取り消す',
+    '举报': '報告',
+    '举报用户': 'ユーザーを報告',
+    '举报用户{name}': '{name}さんを報告',
+    '人工审核': '人による審査',
+    '选择一位管理或超管进行审核': '管理者またはスーパー管理者を選択',
+    '使用第三方 AI 内容审核接口': '第三者の AI 審査 API を使用',
+    '选择审核员': '審査担当者を選択',
+    '提交举报': '報告を送信',
+    '举报理由': '報告理由',
+    'AI智能处理': 'AI審査',
+    'AI审核（接口1）': 'AI审核（接口1）',
+    'AI审核（接口2）': 'AI审核（接口2）',
+    '提交审核': '審査を送信',
+    '举报审核邮件': '報告受信箱',
+    '待审核': '審査待ち',
+    '消息内容': 'メッセージ',
+    '举报人': '報告者',
+    '提交': '送信',
+    '违规': '違反',
+    '正常': '問題なし',
+    '未知': '不明',
+    '无': 'なし',
+    '完成': '完了',
+    '暂无待审核举报': '審査待ちの報告はありません',
+    '举报已提交': '報告を送信しました',
+    'AI审核结果': 'AI審査結果',
+    'AI审核接口': 'AI審査 API',
+    '审核结论': '審査結果',
+    '风险等级': 'リスクレベル',
+    '命中类别': '該当カテゴリ',
+    '命中内容': '該当内容',
+    '内容审核': 'コンテンツ審査',
+    '文本审核': 'テキスト審査',
+    '提交后，所选消息内容会发送至对应的第三方审核接口。': '選択したメッセージは、選択した第三者審査 API に送信されます。',
+    '本次消息内容会发送至所选第三方审核接口。': 'メッセージは選択した第三者審査 API に送信されます。',
+    '暂无可选审核员': '選択できる審査担当者はいません',
+    '请选择审核员': '審査担当者を選択してください',
+    '请选择AI审核接口': 'AI審査 API を選択してください',
+    '不能举报自己的消息': '自分のメッセージは報告できません',
+    '举报的消息不存在或已过期': '報告するメッセージが存在しないか、有効期限切れです',
+    '没有举报审核权限': '報告を審査する権限がありません',
+    '举报审核加载失败': '報告受信箱の読み込みに失敗しました',
+    '举报的消息无效': '報告するメッセージが無効です',
+    '举报理由不能为空且不能超过500个字符': '報告理由を入力してください（500文字以内）',
+    '所选审核员无效': '選択した審査担当者が無効です',
+    'AI审核接口无效': 'AI審査 API が無効です',
+    '消息长度不符合AI审核接口要求': 'メッセージの長さが AI 審査 API の制限外です',
+    'AI审核服务尚未配置，请联系网站管理员': 'AI審査が設定されていません。管理者にお問い合わせください。',
+    'AI审核服务暂时不可用，请稍后重试': 'AI審査は一時的に利用できません。後でもう一度お試しください。',
+    'AI审核未能完成，请稍后重试': 'AI審査を完了できませんでした。後でもう一度お試しください。',
+    '审核结果无效': '審査結果が無効です',
+    '举报记录无效': '報告が無効です',
+    '举报已处理或不属于当前审核员': 'この報告は処理済みか、別の担当者に割り当てられています',
+    '举报提交失败，请检查网络后重试。': '報告を送信できませんでした。接続を確認して再試行してください。',
+    '审核失败，请稍后重试。': '審査に失敗しました。後でもう一度お試しください。',
+    '举报提交者：': '報告者：',
+    '举报理由：': '報告理由：',
+    '审核结论：': '審査結果：',
+    '风险等级：': 'リスクレベル：',
+    '命中类别：': '該当カテゴリ：',
+    '命中内容：': '該当内容：',
     '提及用户': 'ユーザーにメンション',
     '没有匹配的用户': '該当するユーザーはいません',
     '选择语言': '言語を選択',
@@ -337,7 +464,7 @@ const localeTranslations = {
     '压缩后的图片读取失败': '圧縮画像の読み込みに失敗しました',
     '图片无法压缩到100KB以内，请选择较小的图片': '画像を100 KB未満に圧縮できません。小さい画像を選んでください',
     '账户名、用户名和密码不能为空': 'アカウント名、表示名、パスワードを入力してください',
-    '账户名最多30个字符，昵称须为GBK可表示字符且不能超过24字节': 'アカウント名は30文字以内、表示名はGBKで表現可能な文字のみ使用でき、24バイト以内です',
+    '账户名最多30个字符，昵称长度不能超过24（半角1，全角2）': 'アカウント名は30文字以内、表示名の幅は24以内です（半角1、全角2）',
     '请完整填写当前密码和新密码': '現在と新しいパスワードを入力してください',
     '新密码不能超过128个字符': '新しいパスワードは128文字以内です',
     '成员无效': '無効なメンバーです',
@@ -348,7 +475,7 @@ const localeTranslations = {
     '管理只能禁言普通用户或AI用户': '管理者は一般ユーザーまたはAIユーザーのみミュートできます',
     '管理只能解除普通用户或AI用户的禁言': '管理者は一般ユーザーまたはAIユーザーのみミュート解除できます',
     '不能解除超管的禁言': 'オーナーのミュートを解除できません',
-    '昵称须为GBK可表示字符且不能超过24字节': '表示名はGBKで表現可能な文字のみ使用でき、24バイト以内です',
+    '昵称长度不能超过24（半角1，全角2）': '表示名の幅は24以内です（半角1、全角2）',
     '头像必须压缩到100KB以内': 'アバターは100 KB未満に圧縮してください',
     '请输入禁言理由': 'ミュートの理由を入力してください',
     '已被': 'によりミュートされました',
@@ -357,6 +484,7 @@ const localeTranslations = {
   },
   'zh-TW': {
     '[通知]': '[通知]',
+    '用户{reported}，因存在违规行为，被用户{reporter}举报，经{reviewer}核实，已确认该用户存在{reason}的行为': '使用者 {reported} 因有違規行為遭使用者 {reporter} 檢舉，經 {reviewer} 查證，確認該使用者有 {reason} 的行為。',
     ' 用户': ' 使用者',
     '已被 ': '已被 ',
     '的禁言已被 ': '的禁言已被 ',
@@ -407,6 +535,67 @@ const localeTranslations = {
     '引用': '引用',
     '引用:': '回覆給：',
     '取消引用': '取消引用',
+    '举报': '檢舉',
+    '举报用户': '檢舉使用者',
+    '举报用户{name}': '檢舉使用者 {name}',
+    '人工审核': '人工審核',
+    '选择一位管理或超管进行审核': '選擇管理員或超級管理員進行審核',
+    '使用第三方 AI 内容审核接口': '使用第三方 AI 內容審核介面',
+    '选择审核员': '選擇審核員',
+    '提交举报': '提交檢舉',
+    '举报理由': '檢舉原因',
+    'AI智能处理': 'AI 智慧審核',
+    'AI审核（接口1）': 'AI审核（接口1）',
+    'AI审核（接口2）': 'AI审核（接口2）',
+    '提交审核': '提交審核',
+    '举报审核邮件': '檢舉審核信箱',
+    '待审核': '待審核',
+    '消息内容': '訊息內容',
+    '举报人': '檢舉人',
+    '提交': '提交',
+    '违规': '違規',
+    '正常': '正常',
+    '未知': '未知',
+    '无': '無',
+    '完成': '完成',
+    '暂无待审核举报': '目前沒有待審核的檢舉',
+    '举报已提交': '檢舉已提交',
+    'AI审核结果': 'AI 審核結果',
+    'AI审核接口': 'AI 審核介面',
+    '审核结论': '審核結論',
+    '风险等级': '風險等級',
+    '命中类别': '命中類別',
+    '命中内容': '命中內容',
+    '内容审核': '內容審核',
+    '文本审核': '文字審核',
+    '提交后，所选消息内容会发送至对应的第三方审核接口。': '提交後，所選訊息內容會傳送至對應的第三方審核介面。',
+    '本次消息内容会发送至所选第三方审核接口。': '此訊息內容將傳送至所選的第三方審核介面。',
+    '暂无可选审核员': '目前沒有可選的審核員',
+    '请选择审核员': '請選擇審核員',
+    '请选择AI审核接口': '請選擇 AI 審核介面',
+    '不能举报自己的消息': '不能檢舉自己的訊息',
+    '举报的消息不存在或已过期': '檢舉的訊息不存在或已過期',
+    '没有举报审核权限': '沒有檢舉審核權限',
+    '举报审核加载失败': '檢舉審核信箱載入失敗',
+    '举报的消息无效': '檢舉的訊息無效',
+    '举报理由不能为空且不能超过500个字符': '檢舉原因不得空白且不能超過 500 個字元',
+    '所选审核员无效': '所選的審核員無效',
+    'AI审核接口无效': 'AI 審核介面無效',
+    '消息长度不符合AI审核接口要求': '訊息長度不符合 AI 審核介面的限制',
+    'AI审核服务尚未配置，请联系网站管理员': '尚未設定 AI 審核服務，請聯絡網站管理員',
+    'AI审核服务暂时不可用，请稍后重试': 'AI 審核服務暫時無法使用，請稍後再試',
+    'AI审核未能完成，请稍后重试': 'AI 審核未能完成，請稍後再試',
+    '审核结果无效': '審核結果無效',
+    '举报记录无效': '檢舉記錄無效',
+    '举报已处理或不属于当前审核员': '此檢舉已處理或不屬於目前的審核員',
+    '举报提交失败，请检查网络后重试。': '檢舉提交失敗，請檢查網路後再試',
+    '审核失败，请稍后重试。': '審核失敗，請稍後再試',
+    '举报提交者：': '檢舉人：',
+    '举报理由：': '檢舉原因：',
+    '审核结论：': '審核結論：',
+    '风险等级：': '風險等級：',
+    '命中类别：': '命中類別：',
+    '命中内容：': '命中內容：',
     '提及用户': '提及使用者',
     '没有匹配的用户': '找不到符合的使用者',
     '选择语言': '選擇語言',
@@ -511,7 +700,7 @@ const localeTranslations = {
     '压缩后的图片读取失败': '讀取壓縮後的圖片失敗',
     '图片无法压缩到100KB以内，请选择较小的图片': '圖片無法壓縮至 100 KB 以下，請選擇較小的圖片',
     '账户名、用户名和密码不能为空': '帳號名稱、顯示名稱和密碼不能空白',
-    '账户名最多30个字符，昵称须为GBK可表示字符且不能超过24字节': '帳號名稱最多 30 個字元；暱稱只能使用 GBK 可表示的字元，且不得超過 24 位元組',
+    '账户名最多30个字符，昵称长度不能超过24（半角1，全角2）': '帳號名稱最多 30 個字元；暱稱寬度不得超過 24（半形 1、全形 2）',
     '请完整填写当前密码和新密码': '請填寫目前密碼和新密碼',
     '新密码不能超过128个字符': '新密碼不得超過 128 個字元',
     '成员无效': '成員無效',
@@ -522,7 +711,7 @@ const localeTranslations = {
     '管理只能禁言普通用户或AI用户': '管理員只能禁言一般使用者或 AI 使用者',
     '管理只能解除普通用户或AI用户的禁言': '管理員只能解除一般使用者或 AI 使用者的禁言',
     '不能解除超管的禁言': '不能解除擁有者的禁言',
-    '昵称须为GBK可表示字符且不能超过24字节': '暱稱只能使用 GBK 可表示的字元，且不得超過 24 位元組',
+    '昵称长度不能超过24（半角1，全角2）': '暱稱寬度不得超過 24（半形 1、全形 2）',
     '头像必须压缩到100KB以内': '頭像必須壓縮至 100 KB 以下',
     '请输入禁言理由': '請輸入禁言原因',
     '已被': '已被',
@@ -715,9 +904,8 @@ async function register() {
     message.textContent = localizeText('请完整填写所有信息');
     return;
   }
-  const displayNameBytes = window.countGbkBytes(displayName);
-  if (displayNameBytes === null || displayNameBytes > 24) {
-    message.textContent = localizeText('昵称须为GBK可表示字符且不能超过24字节');
+  if (window.countDisplayWidth(displayName) > 24) {
+    message.textContent = localizeText('昵称长度不能超过24（半角1，全角2）');
     return;
   }
   if (!isValidAccount(account)) {
@@ -762,6 +950,7 @@ async function login() {
       myRole = normalizeRole(res.role);
       myAccount = res.account;
       myDisplayName = res.displayName;
+      updateReportInboxButton();
       userRoles.set(String(myUserId), myRole);
       document.getElementById('my-button-name').textContent = myDisplayName;
       document.getElementById('my-profile-name').textContent = myDisplayName;
@@ -908,10 +1097,13 @@ function openMessageContextMenu(message, clientX) {
   const author = message.querySelector('.sender-name');
   if (!content || !author) return;
   contextMenuMessage = {
+    messageId: Number(message.dataset.messageId),
+    userId: Number(message.dataset.userId),
     displayName: author.textContent,
     text: content.textContent
   };
   const menu = document.getElementById('message-context-menu');
+  document.getElementById('report-message-btn').hidden = contextMenuMessage.userId === Number(myUserId);
   menu.hidden = false;
   const bounds = message.getBoundingClientRect();
   const menuBounds = menu.getBoundingClientRect();
@@ -919,6 +1111,243 @@ function openMessageContextMenu(message, clientX) {
   const top = Math.max(8, Math.min(bounds.bottom + 4, window.innerHeight - menuBounds.height - 8));
   menu.style.left = `${left}px`;
   menu.style.top = `${top}px`;
+}
+
+function showReportDialog(target) {
+  reportTarget = target;
+  reportReviewerId = null;
+  reportReviewerName = '';
+  document.getElementById('report-dialog-title').textContent = localizeFormat('举报用户{name}', { name: target.displayName });
+  document.getElementById('report-dialog-status').textContent = '';
+  document.getElementById('report-dialog').showModal();
+}
+
+async function showReviewerDialog() {
+  const dialog = document.getElementById('reviewer-dialog');
+  const list = document.getElementById('reviewer-list');
+  const status = document.getElementById('reviewer-status');
+  list.replaceChildren();
+  status.textContent = '';
+  document.getElementById('report-dialog').close();
+  dialog.showModal();
+
+  try {
+    const response = await loadUsers();
+    if (response.error) throw new Error(response.error);
+    const reviewers = (response.users || []).filter(user =>
+      ['super_admin', 'admin', 'ai_admin'].includes(user.role)
+    );
+    if (reviewers.length === 0) {
+      status.textContent = localizeText('暂无可选审核员');
+      return;
+    }
+
+    reviewers.forEach(user => {
+      const option = document.createElement('div');
+      option.className = 'reviewer-option';
+      const identity = document.createElement('span');
+      identity.className = 'reviewer-identity';
+      const name = document.createElement('span');
+      name.className = 'reviewer-name';
+      name.textContent = user.display_name;
+      identity.append(name, createRoleBadge(user.role));
+      const submit = document.createElement('button');
+      submit.className = 'primary-btn';
+      submit.type = 'button';
+      submit.textContent = localizeText('提交');
+      submit.addEventListener('click', () => {
+        reportReviewerId = Number(user.id);
+        reportReviewerName = user.display_name;
+        dialog.close();
+        const form = document.getElementById('submit-report-form');
+        form.reset();
+        document.getElementById('submit-report-reviewer').textContent =
+          `${localizeText('选择审核员')}：${reportReviewerName}`;
+        document.getElementById('submit-report-status').textContent = '';
+        document.getElementById('submit-report-dialog').showModal();
+        document.getElementById('report-reason').focus();
+      });
+      option.append(identity, submit);
+      list.appendChild(option);
+    });
+  } catch (error) {
+    status.textContent = localizeText(error.message) || localizeText('请检查网络后重试。');
+    console.error('加载举报审核员失败：', error);
+  }
+}
+
+async function submitManualReport(event) {
+  event.preventDefault();
+  if (!reportTarget || !reportReviewerId) return;
+  const submit = document.getElementById('submit-report-submit-btn');
+  const status = document.getElementById('submit-report-status');
+  const reason = document.getElementById('report-reason').value.trim();
+  status.textContent = '';
+  submit.disabled = true;
+
+  try {
+    const response = await api('submitReport', 'POST', {
+      message_id: reportTarget.messageId,
+      reviewer_id: reportReviewerId,
+      reason
+    });
+    if (response.error) throw new Error(response.error);
+    document.getElementById('submit-report-dialog').close();
+    reportTarget = null;
+    document.getElementById('report-dialog-status').textContent = localizeText('举报已提交');
+    document.getElementById('report-dialog').showModal();
+  } catch (error) {
+    status.textContent = localizeText(error.message) || localizeText('举报提交失败，请检查网络后重试。');
+    console.error('提交人工举报失败：', error);
+  } finally {
+    submit.disabled = false;
+  }
+}
+
+function renderAiReviewResult(provider, result) {
+  const container = document.getElementById('ai-result-content');
+  container.replaceChildren();
+  const providerName = provider === 'content-moderation' ? 'AI审核（接口1）' : 'AI审核（接口2）';
+  const fields = provider === 'content-moderation'
+    ? [
+        ['审核结论：', result.is_pass ? localizeText('正常') : localizeText('违规')],
+        ['风险等级：', result.risk_level],
+        ['命中类别：', (result.categories || []).join('、')]
+      ]
+    : [
+        ['审核结论：', result.conclusion || localizeText('未知')],
+        ['命中类别：', (result.violation_categories || []).join('、')],
+        ['命中内容：', (result.violations || []).join('、')]
+      ];
+  const providerLine = document.createElement('p');
+  providerLine.textContent = `${localizeText('AI审核接口')}：${localizeText(providerName)}`;
+  container.appendChild(providerLine);
+  fields.forEach(([label, value]) => {
+    const line = document.createElement('p');
+    const strong = document.createElement('strong');
+    strong.textContent = localizeText(label);
+    line.append(strong, document.createTextNode(String(value || localizeText('无'))));
+    container.appendChild(line);
+  });
+  if (Array.isArray(result.details) && result.details.length > 0) {
+    const list = document.createElement('ul');
+    result.details.forEach(detail => {
+      if (!detail || typeof detail !== 'object') return;
+      const item = document.createElement('li');
+      const category = detail.category || '';
+      const matches = Array.isArray(detail.matches) ? detail.matches.join('、') : '';
+      const word = detail.word || '';
+      item.textContent = [category, word, matches, detail.msg].filter(Boolean).join('：');
+      list.appendChild(item);
+    });
+    container.appendChild(list);
+  }
+  document.getElementById('ai-result-dialog').showModal();
+}
+
+async function submitAiReport() {
+  if (!reportTarget) return;
+  const provider = document.querySelector('input[name="ai-review-provider"]:checked')?.value;
+  const status = document.getElementById('ai-review-status');
+  const submit = document.getElementById('ai-review-submit-btn');
+  status.textContent = '';
+  if (!provider) {
+    status.textContent = localizeText('请选择AI审核接口');
+    return;
+  }
+
+  submit.disabled = true;
+  try {
+    const response = await api('submitAiReport', 'POST', {
+      message_id: reportTarget.messageId,
+      provider
+    });
+    if (response.error) throw new Error(response.error);
+    document.getElementById('ai-review-dialog').close();
+    reportTarget = null;
+    renderAiReviewResult(response.provider, response.result);
+  } catch (error) {
+    status.textContent = localizeText(error.message) || localizeText('审核失败，请稍后重试。');
+    console.error('AI举报审核失败：', error);
+  } finally {
+    submit.disabled = false;
+  }
+}
+
+async function loadReportInbox() {
+  const list = document.getElementById('report-inbox-list');
+  const count = document.getElementById('report-inbox-count');
+  list.replaceChildren();
+  count.textContent = localizeText('正在加载...');
+  try {
+    const response = await api('getPendingReports');
+    if (response.error) throw new Error(response.error);
+    const reports = response.reports || [];
+    count.textContent = `${reports.length} ${localizeText('待审核')}`;
+    if (reports.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'report-empty';
+      empty.textContent = localizeText('暂无待审核举报');
+      list.appendChild(empty);
+      return;
+    }
+
+    reports.forEach(report => {
+      const item = document.createElement('article');
+      item.className = 'report-inbox-item';
+      const title = document.createElement('h3');
+      title.textContent = localizeFormat('举报用户{name}', { name: report.reported_name || localizeText('未知用户') });
+      const reporter = document.createElement('p');
+      reporter.textContent = `${localizeText('举报人')}：${report.reporter_name || localizeText('未知用户')}`;
+      const message = document.createElement('p');
+      message.className = 'report-inbox-message';
+      message.textContent = report.message_text;
+      const reason = document.createElement('p');
+      reason.textContent = `${localizeText('举报理由：')}${report.reason}`;
+      const actions = document.createElement('div');
+      actions.className = 'report-inbox-actions';
+      [['violation', '违规', 'report-violation'], ['normal', '正常', 'report-normal']].forEach(([decision, label, className]) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = className;
+        button.textContent = localizeText(label);
+        button.addEventListener('click', () => reviewReport(report.id, decision, button));
+        actions.appendChild(button);
+      });
+      item.append(title, reporter, message, reason, actions);
+      list.appendChild(item);
+    });
+  } catch (error) {
+    count.textContent = localizeText('举报审核加载失败');
+    const message = document.createElement('p');
+    message.className = 'report-empty';
+    message.textContent = localizeText(error.message) || localizeText('请检查网络后重试。');
+    list.appendChild(message);
+    console.error('加载举报审核邮件失败：', error);
+  }
+}
+
+async function reviewReport(reportId, decision, button) {
+  button.disabled = true;
+  try {
+    const response = await api('reviewReport', 'POST', {
+      report_id: reportId,
+      decision
+    });
+    if (response.error) throw new Error(response.error);
+    await loadReportInbox();
+  } catch (error) {
+    button.disabled = false;
+    alert(localizeText(error.message) || localizeText('审核失败，请稍后重试。'));
+    console.error('处理举报审核失败：', error);
+  }
+}
+
+function updateReportInboxButton() {
+  const button = document.getElementById('report-inbox-btn');
+  if (!button) return;
+  button.hidden = !isModeratorRole(myRole);
+  button.textContent = localizeText('举报审核邮件');
 }
 
 function normalizeRole(role) {
@@ -931,6 +1360,10 @@ function isKnownRole(role) {
 
 function hasAdminPermissions(role) {
   return role === 'admin' || role === 'ai_admin';
+}
+
+function isModeratorRole(role) {
+  return ['super_admin', 'admin', 'ai_admin'].includes(role);
 }
 
 function updateRoleBadges(rolesById) {
@@ -968,8 +1401,25 @@ function renderSystemNotification(container, message, existingRow = null) {
   marker.textContent = localizeText('[通知]');
   row.appendChild(marker);
 
-  if (!notification || notification.type !== 'moderation' || !['mute', 'unmute'].includes(notification.action)) {
+  if (!notification || notification.type !== 'moderation' || !['mute', 'unmute', 'report_violation'].includes(notification.action)) {
     row.append(document.createTextNode(` ${message.text}`));
+    if (!existingRow) container.appendChild(row);
+    return;
+  }
+
+  if (notification.action === 'report_violation') {
+    const reportSummary = document.createElement('span');
+    reportSummary.className = 'notification-report-summary';
+    reportSummary.textContent = localizeFormat(
+      '用户{reported}，因存在违规行为，被用户{reporter}举报，经{reviewer}核实，已确认该用户存在{reason}的行为',
+      {
+        reported: String(notification.targetName || localizeText('未知用户')),
+        reporter: String(notification.reporterName || localizeText('未知用户')),
+        reviewer: String(notification.actorName || localizeText('未知用户')),
+        reason: String(notification.reason || localizeText('违规'))
+      }
+    );
+    row.append(document.createTextNode(' '), reportSummary);
     if (!existingRow) container.appendChild(row);
     return;
   }
@@ -1132,6 +1582,7 @@ async function refreshPresence() {
     });
     const currentUser = usersById.get(String(myUserId));
     if (currentUser && isKnownRole(currentUser.role)) myRole = currentUser.role;
+    updateReportInboxButton();
     updateRoleBadges(userRoles);
     const userInfoDialog = document.getElementById('user-info-dialog');
     if (userInfoDialog.open) {
@@ -1197,6 +1648,7 @@ async function showMembers() {
 
     const currentUser = res.users?.find(user => Number(user.id) === Number(myUserId));
     if (currentUser && isKnownRole(currentUser.role)) myRole = currentUser.role;
+    updateReportInboxButton();
     (res.users || []).forEach(user => {
       if (isKnownRole(user.role)) userRoles.set(String(user.id), user.role);
     });
@@ -1460,9 +1912,8 @@ async function changeDisplayName(event) {
     message.textContent = localizeText('用户名不能为空');
     return;
   }
-  const displayNameBytes = window.countGbkBytes(displayName);
-  if (displayNameBytes === null || displayNameBytes > 24) {
-    message.textContent = localizeText('昵称须为GBK可表示字符且不能超过24字节');
+  if (window.countDisplayWidth(displayName) > 24) {
+    message.textContent = localizeText('昵称长度不能超过24（半角1，全角2）');
     return;
   }
 
@@ -1642,6 +2093,10 @@ function setLanguage(language) {
   currentLanguage = language;
   applyLanguage();
   refreshLocalizedDetails();
+  if (reportTarget && document.getElementById('report-dialog').open) {
+    document.getElementById('report-dialog-title').textContent =
+      localizeFormat('举报用户{name}', { name: reportTarget.displayName });
+  }
   document.querySelectorAll('.system-notification[data-raw-text]').forEach(row => {
     renderSystemNotification(row.parentElement, { text: row.dataset.rawText }, row);
   });
@@ -1992,6 +2447,56 @@ document.addEventListener('DOMContentLoaded', () => {
     showReplyPreview(contextMenuMessage);
     closeMessageContextMenu();
   });
+  document.getElementById('report-message-btn').addEventListener('click', () => {
+    if (!contextMenuMessage || contextMenuMessage.userId === Number(myUserId)) return;
+    const target = { ...contextMenuMessage };
+    closeMessageContextMenu();
+    showReportDialog(target);
+  });
+  document.getElementById('report-dialog-close').addEventListener('click', () => {
+    document.getElementById('report-dialog').close();
+    reportTarget = null;
+  });
+  document.getElementById('manual-report-option').addEventListener('click', showReviewerDialog);
+  document.getElementById('ai-report-option').addEventListener('click', () => {
+    document.getElementById('report-dialog').close();
+    document.getElementById('ai-review-status').textContent = '';
+    document.querySelectorAll('input[name="ai-review-provider"]').forEach(input => { input.checked = false; });
+    document.getElementById('ai-review-dialog').showModal();
+  });
+  document.getElementById('reviewer-dialog-close').addEventListener('click', () => {
+    document.getElementById('reviewer-dialog').close();
+    reportTarget = null;
+  });
+  document.getElementById('reviewer-cancel-btn').addEventListener('click', () => {
+    document.getElementById('reviewer-dialog').close();
+    reportTarget = null;
+  });
+  document.getElementById('submit-report-close').addEventListener('click', () => {
+    document.getElementById('submit-report-dialog').close();
+    reportTarget = null;
+  });
+  document.getElementById('submit-report-cancel-btn').addEventListener('click', () => {
+    document.getElementById('submit-report-dialog').close();
+    reportTarget = null;
+  });
+  document.getElementById('submit-report-form').addEventListener('submit', submitManualReport);
+  document.getElementById('ai-review-close').addEventListener('click', () => {
+    document.getElementById('ai-review-dialog').close();
+    reportTarget = null;
+  });
+  document.getElementById('ai-review-cancel-btn').addEventListener('click', () => {
+    document.getElementById('ai-review-dialog').close();
+    reportTarget = null;
+  });
+  document.getElementById('ai-review-submit-btn').addEventListener('click', submitAiReport);
+  document.getElementById('ai-result-close').addEventListener('click', () => document.getElementById('ai-result-dialog').close());
+  document.getElementById('ai-result-done-btn').addEventListener('click', () => document.getElementById('ai-result-dialog').close());
+  document.getElementById('report-inbox-btn').addEventListener('click', () => {
+    document.getElementById('report-inbox-dialog').showModal();
+    loadReportInbox();
+  });
+  document.getElementById('report-inbox-close').addEventListener('click', () => document.getElementById('report-inbox-dialog').close());
   document.getElementById('reply-cancel-btn').addEventListener('click', clearReplyPreview);
   document.addEventListener('click', event => {
     if (!contextMenu.contains(event.target)) closeMessageContextMenu();
