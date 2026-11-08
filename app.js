@@ -150,7 +150,7 @@ const translations = {
   '账户名或密码错误': 'Incorrect account name or password',
   '账户名已存在': 'Account name already exists',
   '账户名、用户名和密码不能为空': 'Account name, display name, and password are required',
-  '账户名最多30个字符，用户名最多20个字符': 'Account names are limited to 30 characters and display names to 20',
+  '账户名最多30个字符，昵称须为GBK可表示字符且不能超过24字节': 'Account names are limited to 30 characters; display names must use GBK-supported characters and fit within 24 bytes',
   '注册名额已满(100人)': 'Registration is full (100 users)',
   '请完整填写当前密码和新密码': 'Enter your current and new passwords',
   '新密码不能超过128个字符': 'New password cannot exceed 128 characters',
@@ -168,7 +168,7 @@ const translations = {
   '管理只能解除普通用户或AI用户的禁言': 'Admins can only unmute regular or AI users',
   '不能解除超管的禁言': 'The owner cannot be unmuted',
   '该成员当前未被禁言': 'This member is not currently muted',
-  '用户名不能超过20个字符': 'Display name cannot exceed 20 characters',
+  '昵称须为GBK可表示字符且不能超过24字节': 'Display names must use GBK-supported characters and fit within 24 bytes',
   '头像必须压缩到100KB以内': 'Avatar must be compressed to under 100 KB',
   '消息不能为空且不能超过300字': 'Message cannot be empty or exceed 300 characters',
   '引用消息无效': 'Invalid quoted message',
@@ -337,7 +337,7 @@ const localeTranslations = {
     '压缩后的图片读取失败': '圧縮画像の読み込みに失敗しました',
     '图片无法压缩到100KB以内，请选择较小的图片': '画像を100 KB未満に圧縮できません。小さい画像を選んでください',
     '账户名、用户名和密码不能为空': 'アカウント名、表示名、パスワードを入力してください',
-    '账户名最多30个字符，用户名最多20个字符': 'アカウント名は30文字以内、表示名は20文字以内です',
+    '账户名最多30个字符，昵称须为GBK可表示字符且不能超过24字节': 'アカウント名は30文字以内、表示名はGBKで表現可能な文字のみ使用でき、24バイト以内です',
     '请完整填写当前密码和新密码': '現在と新しいパスワードを入力してください',
     '新密码不能超过128个字符': '新しいパスワードは128文字以内です',
     '成员无效': '無効なメンバーです',
@@ -348,7 +348,7 @@ const localeTranslations = {
     '管理只能禁言普通用户或AI用户': '管理者は一般ユーザーまたはAIユーザーのみミュートできます',
     '管理只能解除普通用户或AI用户的禁言': '管理者は一般ユーザーまたはAIユーザーのみミュート解除できます',
     '不能解除超管的禁言': 'オーナーのミュートを解除できません',
-    '用户名不能超过20个字符': '表示名は20文字以内です',
+    '昵称须为GBK可表示字符且不能超过24字节': '表示名はGBKで表現可能な文字のみ使用でき、24バイト以内です',
     '头像必须压缩到100KB以内': 'アバターは100 KB未満に圧縮してください',
     '请输入禁言理由': 'ミュートの理由を入力してください',
     '已被': 'によりミュートされました',
@@ -511,7 +511,7 @@ const localeTranslations = {
     '压缩后的图片读取失败': '讀取壓縮後的圖片失敗',
     '图片无法压缩到100KB以内，请选择较小的图片': '圖片無法壓縮至 100 KB 以下，請選擇較小的圖片',
     '账户名、用户名和密码不能为空': '帳號名稱、顯示名稱和密碼不能空白',
-    '账户名最多30个字符，用户名最多20个字符': '帳號名稱最多 30 個字元，顯示名稱最多 20 個字元',
+    '账户名最多30个字符，昵称须为GBK可表示字符且不能超过24字节': '帳號名稱最多 30 個字元；暱稱只能使用 GBK 可表示的字元，且不得超過 24 位元組',
     '请完整填写当前密码和新密码': '請填寫目前密碼和新密碼',
     '新密码不能超过128个字符': '新密碼不得超過 128 個字元',
     '成员无效': '成員無效',
@@ -522,7 +522,7 @@ const localeTranslations = {
     '管理只能禁言普通用户或AI用户': '管理員只能禁言一般使用者或 AI 使用者',
     '管理只能解除普通用户或AI用户的禁言': '管理員只能解除一般使用者或 AI 使用者的禁言',
     '不能解除超管的禁言': '不能解除擁有者的禁言',
-    '用户名不能超过20个字符': '顯示名稱不得超過 20 個字元',
+    '昵称须为GBK可表示字符且不能超过24字节': '暱稱只能使用 GBK 可表示的字元，且不得超過 24 位元組',
     '头像必须压缩到100KB以内': '頭像必須壓縮至 100 KB 以下',
     '请输入禁言理由': '請輸入禁言原因',
     '已被': '已被',
@@ -713,6 +713,11 @@ async function register() {
 
   if (!account || !displayName || !password || !confirmPassword) {
     message.textContent = localizeText('请完整填写所有信息');
+    return;
+  }
+  const displayNameBytes = window.countGbkBytes(displayName);
+  if (displayNameBytes === null || displayNameBytes > 24) {
+    message.textContent = localizeText('昵称须为GBK可表示字符且不能超过24字节');
     return;
   }
   if (!isValidAccount(account)) {
@@ -1453,6 +1458,11 @@ async function changeDisplayName(event) {
 
   if (!displayName) {
     message.textContent = localizeText('用户名不能为空');
+    return;
+  }
+  const displayNameBytes = window.countGbkBytes(displayName);
+  if (displayNameBytes === null || displayNameBytes > 24) {
+    message.textContent = localizeText('昵称须为GBK可表示字符且不能超过24字节');
     return;
   }
 

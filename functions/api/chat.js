@@ -1,3 +1,5 @@
+import { countGbkBytes } from '../../gbk.mjs';
+
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -5,7 +7,6 @@ export async function onRequest(context) {
   const db = env.DB;
 
   const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
-
   async function hashPassword(password, salt) {
     const enc = new TextEncoder();
     const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveBits', 'deriveKey']);
@@ -20,7 +21,8 @@ export async function onRequest(context) {
       const normalizedAccount = typeof account === 'string' ? account.trim() : '';
       const displayName = typeof display_name === 'string' ? display_name.trim() : '';
       if (!normalizedAccount || !displayName || typeof password !== 'string' || !password) return json({ error: '账户名、用户名和密码不能为空' }, 400);
-      if (normalizedAccount.length > 30 || displayName.length > 20) return json({ error: '账户名最多30个字符，用户名最多20个字符' }, 400);
+      const displayNameBytes = countGbkBytes(displayName);
+      if (normalizedAccount.length > 30 || displayNameBytes === null || displayNameBytes > 24) return json({ error: '账户名最多30个字符，昵称须为GBK可表示字符且不能超过24字节' }, 400);
       if (!/^[A-Za-z0-9_$]+$/.test(normalizedAccount)) return json({ error: '账户名只能包含大小写英文字母、数字、下划线和美元符号（$）' }, 400);
       const count = await db.prepare("SELECT COUNT(*) as c FROM users").first();
       if (count.c >= 100) return json({ error: '注册名额已满(100人)' }, 403);
@@ -200,7 +202,8 @@ export async function onRequest(context) {
       const { display_name } = await request.json();
       const displayName = typeof display_name === 'string' ? display_name.trim() : '';
       if (!displayName) return json({ error: '用户名不能为空' }, 400);
-      if (displayName.length > 20) return json({ error: '用户名不能超过20个字符' }, 400);
+      const displayNameBytes = countGbkBytes(displayName);
+      if (displayNameBytes === null || displayNameBytes > 24) return json({ error: '昵称须为GBK可表示字符且不能超过24字节' }, 400);
       await db.batch([
         db.prepare("UPDATE users SET display_name = ? WHERE id = ?").bind(displayName, session.user_id),
         db.prepare("UPDATE messages SET display_name = ? WHERE user_id = ?").bind(displayName, session.user_id)
@@ -237,7 +240,7 @@ export async function onRequest(context) {
       if (quote !== undefined && quote !== null) {
         const quoteName = typeof quote.display_name === 'string' ? quote.display_name.trim() : '';
         const quoteText = typeof quote.text === 'string' ? quote.text : '';
-        if (!quoteName || quoteName.length > 20 || !quoteText || quoteText.length > 300) {
+        if (!quoteName || quoteName.length > 24 || !quoteText || quoteText.length > 300) {
           return json({ error: '引用消息无效' }, 400);
         }
         storedText = JSON.stringify({

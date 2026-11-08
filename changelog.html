@@ -53,7 +53,7 @@
       </details>
 
       <details class="release-major" open>
-        <summary><span>2.x</span><small>功能持续扩展 · 最新 2.10.0b</small></summary>
+        <summary><span>2.x</span><small>功能持续扩展 · 最新 2.11.0b</small></summary>
 
         <details class="release-minor" open>
           <summary><span>2.0</span><small>账户系统改版 · 最新修订 2.0.0b</small></summary>
@@ -204,7 +204,6 @@
           <details class="release-version">
             <summary><span>2.9.0b</span><small>消息提及与代码优化</small></summary>
             <ul>
-              <li>为 GitHub 与 Bilibili 链接加入 SVG 图标，并调整品牌颜色和尺寸。</li>
               <li>重构多语言映射、日期格式化与重复文案，降低维护成本。</li>
               <li>让消息中的 @ 内容高亮显示；筛选候选时按 Enter 插入首位匹配用户。</li>
               <li>修正键盘选中状态与 Enter 默认选择之间的视觉一致性。</li>
@@ -220,6 +219,17 @@
               <li>使用与首页同目录的 kamshion.png 作为网站图标。</li>
               <li>新增本更新日志页面，按主版本、次版本和修订版本逐层展开查看。</li>
               <li>从登录和注册页面提供更新日志入口。</li>
+            </ul>
+          </details>
+        </details>
+
+        <details class="release-minor">
+          <summary><span>2.11</span><small>昵称长度限制 · 最新修订 2.11.0b</small></summary>
+          <details class="release-version">
+            <summary><span>2.11.0b</span><small>昵称长度上限调整为 24 字节</small></summary>
+            <ul>
+              <li>注册和修改昵称的上限统一为 24 个 GBK 字节：ASCII 字符计 1 字节，GBK 双字节字符计 2 字节。</li>
+              <li>拒绝无法用 GBK 表示的昵称字符；引用中的历史昵称仍可正常显示。</li>
             </ul>
           </details>
         </details>

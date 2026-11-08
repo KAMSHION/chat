@@ -54,7 +54,7 @@
         <label for="register-account">账户名（唯一）</label>
         <input type="text" id="register-account" placeholder="用于登录，不能与他人重复" maxlength="30" pattern="[A-Za-z0-9_$]+" title="账户名只能包含大小写英文字母、数字、下划线和美元符号（$）" autocomplete="username" required>
         <label for="display-name">用户名（对外展示）</label>
-        <input type="text" id="display-name" placeholder="其他成员看到的名称" maxlength="20" autocomplete="nickname" required>
+        <input type="text" id="display-name" placeholder="其他成员看到的名称" autocomplete="nickname" required>
         <label for="register-password">密码</label>
         <input type="password" id="register-password" placeholder="请输入密码" autocomplete="new-password" required>
         <label for="confirm-password">确认密码</label>
@@ -169,7 +169,7 @@
         <input type="file" id="avatar-input" accept="image/*" aria-label="选择头像" hidden onchange="uploadAvatar(this)">
         <form id="my-name-edit-form" class="my-name-edit-form" hidden>
           <label for="my-name-input">新用户名</label>
-          <input id="my-name-input" type="text" maxlength="20" autocomplete="nickname" required>
+          <input id="my-name-input" type="text" autocomplete="nickname" required>
           <p id="my-name-msg" role="status" aria-live="polite"></p>
           <div class="btn-group">
             <button id="my-name-cancel-btn" type="button" class="secondary-btn">取消</button>
@@ -288,6 +288,10 @@
       </div>
     </dialog>
   </main>
+  <script type="module">
+    import { countGbkBytes } from './gbk.mjs';
+    window.countGbkBytes = countGbkBytes;
+  </script>
   <script src="app.js"></script>
 </body>
 </html>
