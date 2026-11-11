@@ -21,6 +21,8 @@ let reportTarget = null;
 let reportReviewerId = null;
 let reportReviewerName = '';
 let pendingReportReview = null;
+let aiConversation = [];
+let isAiRequestInProgress = false;
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 const workspaceAnimationTimers = new WeakMap();
@@ -30,6 +32,24 @@ const translations = {
   '极简聊窗': 'Minimal Chat',
   '极光聊窗': 'Aurora Chat',
   '极光 · 聊窗': 'Aurora · Chat',
+  '星火 · AI': 'Spark · AI',
+  'AI助手': 'AI assistant',
+  'AI对话': 'AI conversation',
+  '与讯飞星火模型对话。你发送的内容会传给讯飞星火处理。': 'Chat with iFLYTEK Spark. Messages you send are sent to iFLYTEK for processing.',
+  '新建对话': 'New chat',
+  '你好！我是极光 AI，有什么可以帮你？': 'Hello! I am Aurora AI. How can I help?',
+  '输入问题，Enter 发送，Shift + Enter 换行': 'Enter a question. Press Enter to send, or Shift + Enter for a new line.',
+  '对话仅保存在当前页面；刷新或登出后会清空。': 'This conversation stays in this page only and is cleared when you refresh or log out.',
+  '输入问题': 'Enter a question',
+  '请输入问题': 'Enter a question',
+  '你': 'You',
+  '思考中...': 'Thinking...',
+  'AI暂时无法回复，请稍后重试。': 'AI could not respond. Please try again later.',
+  '讯飞星火服务尚未配置，请联系网站管理员。': 'iFLYTEK Spark is not configured. Contact the site administrator.',
+  '星火AI请求失败，请联系管理员检查服务配置。': 'The Spark AI request failed. Ask the administrator to check the service configuration.',
+  '星火AI服务响应超时，请稍后重试。': 'The Spark AI service timed out. Please try again later.',
+  '讯飞星火服务返回了无效响应，请稍后重试。': 'The iFLYTEK Spark service returned an invalid response. Please try again later.',
+  '星火AI请求无效，请检查输入内容。': 'The Spark AI request is invalid. Check your message.',
   '账户 · 安全': 'Account · Security',
   '外观 · 设置': 'Appearance · Settings',
   '管理员': 'Administration',
@@ -292,6 +312,24 @@ const localeTranslations = {
     '极简聊窗': 'シンプルチャット',
     '极光聊窗': 'オーロラチャット',
     '极光 · 聊窗': 'オーロラ · チャット',
+    '星火 · AI': 'Spark · AI',
+    'AI助手': 'AI アシスタント',
+    'AI对话': 'AI 会話',
+    '与讯飞星火模型对话。你发送的内容会传给讯飞星火处理。': 'iFLYTEK Spark モデルと会話できます。送信した内容は iFLYTEK Spark に送信されます。',
+    '新建对话': '新しい会話',
+    '你好！我是极光 AI，有什么可以帮你？': 'こんにちは！オーロラ AI です。何かお手伝いできますか？',
+    '输入问题，Enter 发送，Shift + Enter 换行': '質問を入力してください。Enter で送信、Shift + Enter で改行します。',
+    '对话仅保存在当前页面；刷新或登出后会清空。': '会話はこのページ内のみ保存され、再読み込みまたはログアウトで消去されます。',
+    '输入问题': '質問を入力',
+    '请输入问题': '質問を入力してください',
+    '你': 'あなた',
+    '思考中...': '考え中...',
+    'AI暂时无法回复，请稍后重试。': 'AI は現在応答できません。後でもう一度お試しください。',
+    '讯飞星火服务尚未配置，请联系网站管理员。': 'iFLYTEK Spark が設定されていません。管理者にお問い合わせください。',
+    '星火AI请求失败，请联系管理员检查服务配置。': 'Spark AI リクエストに失敗しました。管理者に設定を確認してください。',
+    '星火AI服务响应超时，请稍后重试。': 'Spark AI がタイムアウトしました。後でもう一度お試しください。',
+    '讯飞星火服务返回了无效响应，请稍后重试。': 'iFLYTEK Spark から無効な応答がありました。後でもう一度お試しください。',
+    '星火AI请求无效，请检查输入内容。': 'Spark AI リクエストが無効です。入力内容を確認してください。',
     '账户 · 安全': 'アカウント · セキュリティ',
     '外观 · 设置': '外観 · 設定',
     '管理员': '管理者',
@@ -554,6 +592,24 @@ const localeTranslations = {
     '极简聊窗': '極簡聊窗',
     '极光聊窗': '極光聊窗',
     '极光 · 聊窗': '極光 · 聊窗',
+    '星火 · AI': '星火 · AI',
+    'AI助手': 'AI 助手',
+    'AI对话': 'AI 對話',
+    '与讯飞星火模型对话。你发送的内容会传给讯飞星火处理。': '與訊飛星火模型對話。您傳送的內容會提供給訊飛星火處理。',
+    '新建对话': '新增對話',
+    '你好！我是极光 AI，有什么可以帮你？': '你好！我是極光 AI，有什麼可以幫你？',
+    '输入问题，Enter 发送，Shift + Enter 换行': '輸入問題，按 Enter 傳送，Shift + Enter 換行。',
+    '对话仅保存在当前页面；刷新或登出后会清空。': '對話僅保存在目前頁面；重新整理或登出後會清除。',
+    '输入问题': '輸入問題',
+    '请输入问题': '請輸入問題',
+    '你': '你',
+    '思考中...': '思考中...',
+    'AI暂时无法回复，请稍后重试。': 'AI 暫時無法回覆，請稍後再試。',
+    '讯飞星火服务尚未配置，请联系网站管理员。': '訊飛星火服務尚未設定，請聯絡網站管理員。',
+    '星火AI请求失败，请联系管理员检查服务配置。': '星火 AI 請求失敗，請聯絡管理員檢查服務設定。',
+    '星火AI服务响应超时，请稍后重试。': '星火 AI 服務回應逾時，請稍後再試。',
+    '讯飞星火服务返回了无效响应，请稍后重试。': '訊飛星火服務傳回無效回應，請稍後再試。',
+    '星火AI请求无效，请检查输入内容。': '星火 AI 請求無效，請檢查輸入內容。',
     '账户 · 安全': '帳戶 · 安全',
     '外观 · 设置': '外觀 · 設定',
     '管理员': '管理員',
@@ -918,6 +974,7 @@ function applyLanguage(root = document) {
   document.querySelectorAll('.message-time[data-timestamp]').forEach(time => {
     time.textContent = formatMessageTime(Number(time.dataset.timestamp));
   });
+  if (document.getElementById('ai-chat-messages')) renderAiConversation();
 }
 
 function formatMessageTime(timestamp) {
@@ -976,6 +1033,100 @@ async function api(action, method = 'GET', body = null) {
   }
   const res = await fetch(`/api/chat?action=${action}`, options);
   return await res.json();
+}
+
+function trimAiConversation() {
+  while (aiConversation.length > 20 || aiConversation.reduce((total, message) => total + message.content.length, 0) > 20000) {
+    aiConversation.shift();
+  }
+}
+
+function renderAiConversation() {
+  const container = document.getElementById('ai-chat-messages');
+  if (!container) return;
+  container.replaceChildren();
+
+  if (aiConversation.length === 0) {
+    const welcome = document.createElement('div');
+    welcome.className = 'ai-chat-welcome';
+    const title = document.createElement('strong');
+    title.textContent = localizeText('你好！我是极光 AI，有什么可以帮你？');
+    welcome.appendChild(title);
+    container.appendChild(welcome);
+    return;
+  }
+
+  aiConversation.forEach(message => {
+    const item = document.createElement('article');
+    item.className = 'ai-chat-message';
+    item.dataset.role = message.role;
+    const label = document.createElement('span');
+    label.className = 'ai-chat-message-label';
+    label.textContent = message.role === 'user' ? localizeText('你') : 'AI';
+    const content = document.createElement('p');
+    content.className = 'ai-chat-message-content';
+    content.textContent = message.content;
+    item.append(label, content);
+    container.appendChild(item);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+
+function clearAiConversation() {
+  if (isAiRequestInProgress) return;
+  aiConversation = [];
+  document.getElementById('ai-chat-status').textContent = '';
+  renderAiConversation();
+  document.getElementById('ai-chat-input').focus();
+}
+
+async function submitAiChat(event) {
+  event.preventDefault();
+  if (isAiRequestInProgress) return;
+
+  const input = document.getElementById('ai-chat-input');
+  const prompt = input.value.trim();
+  const status = document.getElementById('ai-chat-status');
+  if (!prompt) {
+    status.textContent = localizeText('请输入问题');
+    input.focus();
+    return;
+  }
+  if (prompt.length > 4000) {
+    status.textContent = localizeText('星火AI请求无效，请检查输入内容。');
+    return;
+  }
+
+  aiConversation.push({ role: 'user', content: prompt });
+  trimAiConversation();
+  renderAiConversation();
+  input.value = '';
+  status.textContent = localizeText('思考中...');
+  isAiRequestInProgress = true;
+  input.disabled = true;
+  document.getElementById('ai-chat-submit-btn').disabled = true;
+  document.getElementById('ai-chat-clear-btn').disabled = true;
+
+  try {
+    const response = await api('chatWithAi', 'POST', { messages: aiConversation });
+    if (response.error) throw new Error(response.error);
+    if (typeof response.reply !== 'string' || !response.reply.trim()) {
+      throw new Error('AI暂时无法回复，请稍后重试。');
+    }
+    aiConversation.push({ role: 'assistant', content: response.reply });
+    trimAiConversation();
+    renderAiConversation();
+    status.textContent = '';
+  } catch (error) {
+    status.textContent = localizeText(error.message) || localizeText('AI暂时无法回复，请稍后重试。');
+    console.error('极光 AI 请求失败：', error);
+  } finally {
+    isAiRequestInProgress = false;
+    input.disabled = false;
+    document.getElementById('ai-chat-submit-btn').disabled = false;
+    document.getElementById('ai-chat-clear-btn').disabled = false;
+    input.focus();
+  }
 }
 
 function showAuthMessage(message, isSuccess = false) {
@@ -1498,6 +1649,7 @@ function updateReportInboxButton() {
 function showWorkspaceView(viewName) {
   const views = {
     chat: document.getElementById('chat-view'),
+    ai: document.getElementById('ai-view'),
     account: document.getElementById('account-view'),
     appearance: document.getElementById('appearance-view')
   };
@@ -2643,6 +2795,15 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     sendMessage();
   });
+
+  document.getElementById('ai-chat-form').addEventListener('submit', submitAiChat);
+  document.getElementById('ai-chat-input').addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      event.currentTarget.form.requestSubmit();
+    }
+  });
+  document.getElementById('ai-chat-clear-btn').addEventListener('click', clearAiConversation);
 
   const messages = document.getElementById('messages');
   const contextMenu = document.getElementById('message-context-menu');

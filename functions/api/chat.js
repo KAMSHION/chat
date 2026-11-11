@@ -201,6 +201,92 @@ export async function onRequest(context) {
       return json({ success: true, reportId: inserted.id });
     }
 
+    if (action === 'chatWithAi') {
+      let payload;
+      try {
+        payload = await request.json();
+      } catch {
+        return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
+      }
+
+      if (!Array.isArray(payload?.messages) || payload.messages.length === 0 || payload.messages.length > 20) {
+        return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
+      }
+      const messages = [];
+      let totalLength = 0;
+      for (const message of payload.messages) {
+        if (
+          !message ||
+          !['user', 'assistant'].includes(message.role) ||
+          typeof message.content !== 'string' ||
+          !message.content.trim() ||
+          message.content.length > 4000
+        ) {
+          return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
+        }
+        totalLength += message.content.length;
+        if (totalLength > 20000) return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
+        messages.push({ role: message.role, content: message.content });
+      }
+      if (messages[messages.length - 1].role !== 'user') {
+        return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
+      }
+
+      const apiKey = typeof env.XFYUN_API_KEY === 'string' ? env.XFYUN_API_KEY.trim() : '';
+      if (!apiKey) return json({ error: '讯飞星火服务尚未配置，请联系网站管理员。' }, 503);
+      const model = 'spark-x2.5-1.7b';
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60_000);
+      let providerResponse;
+      try {
+        providerResponse = await fetch('https://maas-api.cn-huabei-1.xf-yun.com/v2/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            stream: false,
+            max_completion_tokens: 1024
+          }),
+          signal: controller.signal
+        });
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error?.name === 'AbortError') {
+          return json({ error: '星火AI服务响应超时，请稍后重试。' }, 504);
+        }
+        console.error('讯飞星火 API 连接失败：', error?.name || 'NetworkError');
+        return json({ error: '星火AI请求失败，请联系管理员检查服务配置。' }, 502);
+      }
+
+      if (!providerResponse.ok) {
+        clearTimeout(timeoutId);
+        console.error('讯飞星火 API 返回错误状态：', providerResponse.status);
+        return json({ error: '星火AI请求失败，请联系管理员检查服务配置。' }, 502);
+      }
+      let providerPayload;
+      try {
+        providerPayload = await providerResponse.json();
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error?.name === 'AbortError') {
+          return json({ error: '星火AI服务响应超时，请稍后重试。' }, 504);
+        }
+        return json({ error: '讯飞星火服务返回了无效响应，请稍后重试。' }, 502);
+      }
+      clearTimeout(timeoutId);
+      const reply = providerPayload?.choices?.[0]?.message?.content;
+      if (typeof reply !== 'string' || !reply.trim() || reply.length > 20000) {
+        console.error('讯飞星火 API 返回了无法识别的响应。');
+        return json({ error: '讯飞星火服务返回了无效响应，请稍后重试。' }, 502);
+      }
+      return json({ reply });
+    }
+
     if (action === 'submitAiReport') {
       const { message_id, provider } = await request.json();
       const messageId = Number(message_id);

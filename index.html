@@ -91,6 +91,11 @@
             <span class="sidebar-nav-icon" aria-hidden="true">◐</span><span>外观 · 设置</span>
           </button>
         </nav>
+        <section id="sidebar-ai-section" class="sidebar-ai" aria-label="AI助手">
+          <button id="ai-view-btn" class="sidebar-nav-item" type="button" data-workspace-view="ai">
+            <span class="sidebar-nav-icon" aria-hidden="true">✧</span><span>星火 · AI</span>
+          </button>
+        </section>
         <section id="sidebar-admin-section" class="sidebar-admin" aria-labelledby="sidebar-admin-title" hidden>
           <h2 id="sidebar-admin-title">管理员</h2>
           <button id="members-btn" class="sidebar-nav-item" type="button">
@@ -158,6 +163,32 @@
               </button>
             </div>
           </form>
+        </section>
+
+        <section id="ai-view" class="workspace-view ai-workspace-view" aria-labelledby="ai-view-title" hidden>
+          <header class="ai-workspace-header">
+            <div class="workspace-page-header">
+              <p class="workspace-eyebrow">SPARK AI</p>
+              <h1 id="ai-view-title">星火 · AI</h1>
+              <p>与讯飞星火模型对话。你发送的内容会传给讯飞星火处理。</p>
+            </div>
+            <div class="ai-workspace-actions">
+              <span class="ai-model-badge"><span aria-hidden="true">✦</span> 讯飞星火 · spark-x2.5-1.7b</span>
+              <button id="ai-chat-clear-btn" class="secondary-btn" type="button">新建对话</button>
+            </div>
+          </header>
+          <div class="ai-chat-card">
+            <div id="ai-chat-messages" class="ai-chat-messages" aria-live="polite" aria-label="AI对话"></div>
+            <p id="ai-chat-status" class="ai-chat-status" role="status" aria-live="polite"></p>
+            <form id="ai-chat-form" class="ai-chat-form">
+              <label class="sr-only" for="ai-chat-input">输入问题</label>
+              <textarea id="ai-chat-input" maxlength="4000" rows="3" placeholder="输入问题，Enter 发送，Shift + Enter 换行"></textarea>
+              <div class="ai-chat-form-footer">
+                <span>对话仅保存在当前页面；刷新或登出后会清空。</span>
+                <button id="ai-chat-submit-btn" class="primary-btn" type="submit">发送</button>
+              </div>
+            </form>
+          </div>
         </section>
 
         <section id="account-view" class="workspace-view settings-workspace-view" aria-labelledby="account-view-title" hidden>
