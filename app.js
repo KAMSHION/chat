@@ -26,6 +26,23 @@ const originalAttributes = new WeakMap();
 
 const translations = {
   '极简聊窗': 'Minimal Chat',
+  '极光聊窗': 'Aurora Chat',
+  '极光 · 聊窗': 'Aurora · Chat',
+  '账户 · 安全': 'Account · Security',
+  '外观 · 设置': 'Appearance · Settings',
+  '管理员': 'Administration',
+  '禁言用户': 'Manage muted users',
+  '待处理举报': 'Pending reports',
+  '登出': 'Log out',
+  '主题切换': 'Theme',
+  '选择你喜欢的极光色彩。': 'Choose your preferred Aurora theme.',
+  '语言': 'Language',
+  '更改界面显示语言。': 'Change the interface language.',
+  '极光 · 暗光': 'Aurora · Dark',
+  '极光 · 亮白': 'Aurora · Light',
+  '管理你的头像、昵称与登录安全。': 'Manage your avatar, display name, and sign-in security.',
+  'PROFILE & SECURITY': 'PROFILE & SECURITY',
+  'APPEARANCE': 'APPEARANCE',
   '登录后加入对话，和大家分享此刻。': 'Log in to join the conversation and share the moment.',
   '账户名': 'Account name',
   '请输入账户名': 'Enter your account name',
@@ -132,6 +149,7 @@ const translations = {
   '命中类别：': 'Categories: ',
   '命中内容：': 'Matches: ',
   '极简聊窗成员': 'Chat members',
+  '极光聊窗成员': 'Aurora Chat members',
   '正在加载...': 'Loading...',
   '关闭成员列表': 'Close members list',
   '我的': 'My Profile',
@@ -264,6 +282,21 @@ const localeTranslations = {
     '禁言用户，时长（min）': 'ミュート時間（分）',
     '确认解除该成员的禁言吗？': 'このメンバーのミュートを解除しますか？',
     '极简聊窗': 'シンプルチャット',
+    '极光聊窗': 'オーロラチャット',
+    '极光 · 聊窗': 'オーロラ · チャット',
+    '账户 · 安全': 'アカウント · セキュリティ',
+    '外观 · 设置': '外観 · 設定',
+    '管理员': '管理者',
+    '禁言用户': 'ミュート管理',
+    '待处理举报': '未処理の報告',
+    '登出': 'ログアウト',
+    '主题切换': 'テーマ',
+    '选择你喜欢的极光色彩。': 'お好みのオーロラテーマを選択してください。',
+    '语言': '言語',
+    '更改界面显示语言。': '画面の表示言語を変更します。',
+    '极光 · 暗光': 'オーロラ · ダーク',
+    '极光 · 亮白': 'オーロラ · ライト',
+    '管理你的头像、昵称与登录安全。': 'アバター、表示名、ログインの安全性を管理します。',
     '登录后加入对话，和大家分享此刻。': 'ログインして会話に参加し、今この瞬間を共有しましょう。',
     '账户名': 'アカウント名',
     '消息长度不足，无法添加提及': 'メッセージの文字数上限によりメンションを追加できません',
@@ -379,6 +412,7 @@ const localeTranslations = {
     '日本語': '日本語',
     '繁體中文': '繁体字中国語',
     '极简聊窗成员': 'シンプルチャットのメンバー',
+    '极光聊窗成员': 'オーロラチャットのメンバー',
     '正在加载...': '読み込み中...',
     '关闭成员列表': 'メンバー一覧を閉じる',
     '我的': 'マイプロフィール',
@@ -504,6 +538,21 @@ const localeTranslations = {
     '禁言用户，时长（min）': '禁言時間（分鐘）',
     '确认解除该成员的禁言吗？': '確定要解除該成員的禁言嗎？',
     '极简聊窗': '極簡聊窗',
+    '极光聊窗': '極光聊窗',
+    '极光 · 聊窗': '極光 · 聊窗',
+    '账户 · 安全': '帳戶 · 安全',
+    '外观 · 设置': '外觀 · 設定',
+    '管理员': '管理員',
+    '禁言用户': '管理禁言使用者',
+    '待处理举报': '待處理檢舉',
+    '登出': '登出',
+    '主题切换': '主題切換',
+    '选择你喜欢的极光色彩。': '選擇你喜歡的極光色彩。',
+    '语言': '語言',
+    '更改界面显示语言。': '更改介面顯示語言。',
+    '极光 · 暗光': '極光 · 暗光',
+    '极光 · 亮白': '極光 · 亮白',
+    '管理你的头像、昵称与登录安全。': '管理你的頭像、暱稱與登入安全。',
     '登录后加入对话，和大家分享此刻。': '登入後加入對話，和大家分享此刻。',
     '账户名': '帳號名稱',
     '消息长度不足，无法添加提及': '訊息字數已達上限，無法新增提及',
@@ -619,6 +668,7 @@ const localeTranslations = {
     '日本語': '日文',
     '繁體中文': '繁體中文',
     '极简聊窗成员': '極簡聊窗成員',
+    '极光聊窗成员': '極光聊窗成員',
     '正在加载...': '載入中...',
     '关闭成员列表': '關閉成員清單',
     '我的': '我的個人資料',
@@ -814,6 +864,19 @@ function applyLanguage(root = document) {
   });
   const languageButton = document.getElementById('language-toggle');
   if (languageButton) languageButton.setAttribute('aria-label', localizeText('选择语言'));
+  const languageLabel = document.getElementById('current-language-label');
+  if (languageLabel) {
+    languageLabel.textContent = ({
+      'zh-CN': '简体中文',
+      en: 'English',
+      ja: '日本語',
+      'zh-TW': '繁體中文'
+    })[currentLanguage];
+  }
+  document.querySelectorAll('[data-theme-choice]').forEach(option => {
+    option.setAttribute('aria-pressed', String(option.dataset.themeChoice === (document.documentElement.dataset.theme === 'night' ? 'night' : 'day')));
+  });
+  document.title = localizeText('极光聊窗');
   const languagePicker = document.getElementById('language-picker');
   if (languagePicker) languagePicker.setAttribute('aria-label', localizeText('选择语言'));
   languagePicker?.querySelectorAll('[data-language]').forEach(option => {
@@ -966,6 +1029,8 @@ async function login() {
       updateReportInboxButton();
       userRoles.set(String(myUserId), myRole);
       document.getElementById('my-button-name').textContent = myDisplayName;
+      document.getElementById('my-button-avatar').textContent = myDisplayName.charAt(0).toUpperCase();
+      document.getElementById('sidebar-account-name').textContent = myAccount;
       document.getElementById('my-profile-name').textContent = myDisplayName;
       document.getElementById('my-account').textContent = myAccount;
       const myBadge = document.getElementById('my-profile-role');
@@ -974,7 +1039,8 @@ async function login() {
       document.getElementById('auth-panel').style.display = 'none';
       document.getElementById('register-panel').hidden = true;
       const chatPanel = document.getElementById('chat-panel');
-      chatPanel.style.display = 'flex';
+      chatPanel.style.display = 'grid';
+      showWorkspaceView('chat');
       requestAnimationFrame(() => {
         chatPanel.classList.remove('chat-panel-entering');
         void chatPanel.offsetWidth;
@@ -1406,7 +1472,26 @@ function updateReportInboxButton() {
   const button = document.getElementById('report-inbox-btn');
   if (!button) return;
   button.hidden = !isModeratorRole(myRole);
-  button.textContent = localizeText('举报审核邮件');
+  document.getElementById('sidebar-admin-section').hidden = !isModeratorRole(myRole);
+}
+
+function showWorkspaceView(viewName) {
+  const views = {
+    chat: document.getElementById('chat-view'),
+    account: document.getElementById('account-view'),
+    appearance: document.getElementById('appearance-view')
+  };
+  if (!Object.prototype.hasOwnProperty.call(views, viewName)) return;
+
+  Object.entries(views).forEach(([name, view]) => {
+    view.hidden = name !== viewName;
+  });
+  document.querySelectorAll('[data-workspace-view]').forEach(button => {
+    const active = button.dataset.workspaceView === viewName;
+    button.classList.toggle('active', active);
+    if (active) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
 }
 
 function normalizeRole(role) {
@@ -1988,6 +2073,7 @@ async function changeDisplayName(event) {
     const myProfile = userProfiles.get(String(myUserId));
     if (myProfile) myProfile.display_name = myDisplayName;
     document.getElementById('my-button-name').textContent = myDisplayName;
+    document.getElementById('sidebar-account-name').textContent = myAccount;
     document.getElementById('my-profile-name').textContent = myDisplayName;
     document.querySelectorAll('.message').forEach(row => {
       if (Number(row.dataset.userId) !== Number(myUserId)) return;
@@ -2135,10 +2221,10 @@ async function unmuteMember() {
 function setTheme(theme) {
   const isNight = theme === 'night';
   document.documentElement.dataset.theme = isNight ? 'night' : 'day';
-  const toggle = document.getElementById('theme-toggle');
-  toggle.textContent = localizeText(isNight ? '切换到白昼' : '切换到极夜');
-  toggle.setAttribute('aria-pressed', String(isNight));
-  toggle.setAttribute('aria-label', toggle.textContent);
+  document.querySelectorAll('[data-theme-choice]').forEach(option => {
+    const selected = option.dataset.themeChoice === (isNight ? 'night' : 'day');
+    option.setAttribute('aria-pressed', String(selected));
+  });
   document.querySelector('meta[name="theme-color"]').content = isNight ? '#111827' : '#f4f7fb';
   try {
     localStorage.setItem('chat-theme', isNight ? 'night' : 'day');
@@ -2422,7 +2508,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const registerForm = document.getElementById('register-form');
   const messageForm = document.getElementById('message-form');
   const membersDialog = document.getElementById('members-dialog');
-  const myDialog = document.getElementById('my-dialog');
   const languageDialog = document.getElementById('language-dialog');
   const userInfoDialog = document.getElementById('user-info-dialog');
   const changePasswordDialog = document.getElementById('change-password-dialog');
@@ -2463,8 +2548,11 @@ document.addEventListener('DOMContentLoaded', () => {
     languageButton.setAttribute('aria-expanded', 'false');
     languageButton.focus();
   });
-  document.getElementById('theme-toggle').addEventListener('click', () => {
-    setTheme(document.documentElement.dataset.theme === 'night' ? 'day' : 'night');
+  document.querySelectorAll('[data-theme-choice]').forEach(option => {
+    option.addEventListener('click', () => setTheme(option.dataset.themeChoice));
+  });
+  document.querySelectorAll('[data-workspace-view]').forEach(button => {
+    button.addEventListener('click', () => showWorkspaceView(button.dataset.workspaceView));
   });
   document.getElementById('mention-toggle').addEventListener('click', insertMentionTrigger);
   document.addEventListener('click', event => {
@@ -2582,15 +2670,8 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', closeMessageContextMenu);
 
   document.getElementById('members-btn').addEventListener('click', showMembers);
+  document.getElementById('chat-members-btn').addEventListener('click', showMembers);
   document.getElementById('members-close').addEventListener('click', () => membersDialog.close());
-  document.getElementById('my-btn').addEventListener('click', () => {
-    document.getElementById('my-profile-name').textContent = myDisplayName;
-    document.getElementById('my-account').textContent = myAccount;
-    document.getElementById('my-name-edit-form').hidden = true;
-    document.getElementById('my-name-msg').textContent = '';
-    myDialog.showModal();
-  });
-  document.getElementById('my-dialog-close').addEventListener('click', () => myDialog.close());
   document.getElementById('user-info-close').addEventListener('click', () => userInfoDialog.close());
   document.getElementById('my-profile-avatar').addEventListener('click', () => document.getElementById('avatar-input').click());
   document.getElementById('my-name-edit-btn').addEventListener('click', () => {

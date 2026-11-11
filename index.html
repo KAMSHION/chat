@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f4f7fb">
-  <title>极简聊窗</title>
+  <title>极光聊窗</title>
   <link rel="icon" type="image/png" href="kamshion.png">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,7 +13,7 @@
     <section id="auth-panel" aria-labelledby="auth-title">
       <div class="brand-mark" aria-hidden="true">聊</div>
       <p class="eyebrow">WELCOME TO</p>
-      <h1 id="auth-title">极简聊窗</h1>
+      <h1 id="auth-title">极光聊窗</h1>
       <p class="auth-description">登录后加入对话，和大家分享此刻。</p>
 
       <form id="auth-form">
@@ -71,127 +71,179 @@
       </footer>
     </section>
 
-    <section id="chat-panel" aria-label="极简聊窗" style="display: none;">
-      <header id="header">
-        <div class="chat-heading">
-          <div class="brand-mark small" aria-hidden="true">聊</div>
-          <div>
-            <h1>极简聊窗</h1>
-            <p>
-              <span class="status-dot"></span><span id="connection-status">正在连接...</span>
-              <span class="online-count">· <span id="online-count">0</span> 人在线</span>
-            </p>
+    <section id="chat-panel" aria-label="极光聊窗" style="display: none;">
+      <aside id="workspace-sidebar" aria-label="主导航">
+        <div class="sidebar-profile">
+          <div id="my-button-avatar" class="sidebar-avatar" aria-hidden="true"></div>
+          <div class="sidebar-profile-copy">
+            <strong id="my-button-name"></strong>
+            <span id="sidebar-account-name"></span>
           </div>
         </div>
-        <div class="header-actions">
-          <button id="report-inbox-btn" type="button" aria-label="举报审核邮件" hidden>✉ 待审核</button>
-          <button id="members-btn" type="button">成员</button>
-          <button id="my-btn" class="my-button" type="button" aria-label="打开我的资料">
-            <span id="my-button-avatar" class="my-button-avatar"></span>
-            <span id="my-button-name" class="my-button-name"></span>
+        <nav class="sidebar-navigation" aria-label="工作区">
+          <button id="chat-view-btn" class="sidebar-nav-item active" type="button" data-workspace-view="chat" aria-current="page">
+            <span class="sidebar-nav-icon" aria-hidden="true">✦</span><span>极光 · 聊窗</span>
           </button>
-        </div>
-      </header>
-      <div id="messages" aria-live="polite" aria-label="聊天消息">
-        <div class="empty-state" id="empty-state">
-          <span class="empty-icon" aria-hidden="true">✦</span>
-          <strong>这里暂时还没有消息</strong>
-          <span>发送第一条消息，开启对话吧。</span>
-        </div>
-      </div>
-      <div id="message-context-menu" class="message-context-menu" role="menu" hidden>
-        <button id="quote-message-btn" type="button" role="menuitem">引用</button>
-        <button id="report-message-btn" type="button" role="menuitem">举报</button>
-      </div>
-      <form id="message-form">
-        <div id="input-area">
-          <button id="mention-toggle" class="mention-toggle" type="button" aria-label="提及用户" title="提及用户">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16.5 8.5v5a2.5 2.5 0 0 0 5 0v-2a9.5 9.5 0 1 0-3.1 7.05"/><circle cx="11" cy="12" r="4.5"/><path d="M15.5 12v1.5"/></svg>
+          <button id="account-view-btn" class="sidebar-nav-item" type="button" data-workspace-view="account">
+            <span class="sidebar-nav-icon" aria-hidden="true">▣</span><span>账户 · 安全</span>
           </button>
-          <div class="composer">
-            <div id="mention-picker" class="mention-picker" role="listbox" aria-label="提及用户" hidden></div>
-            <div id="reply-preview" class="reply-preview" hidden>
-              <div class="reply-preview-content">
-                <span id="reply-preview-label">引用</span>
-                <span id="reply-preview-text"></span>
+          <button id="appearance-view-btn" class="sidebar-nav-item" type="button" data-workspace-view="appearance">
+            <span class="sidebar-nav-icon" aria-hidden="true">◐</span><span>外观 · 设置</span>
+          </button>
+        </nav>
+        <section id="sidebar-admin-section" class="sidebar-admin" aria-labelledby="sidebar-admin-title" hidden>
+          <h2 id="sidebar-admin-title">管理员</h2>
+          <button id="members-btn" class="sidebar-nav-item" type="button">
+            <span class="sidebar-nav-icon" aria-hidden="true">⊘</span><span>禁言用户</span>
+          </button>
+          <button id="report-inbox-btn" class="sidebar-nav-item" type="button" aria-label="举报审核邮件" hidden>
+            <span class="sidebar-nav-icon" aria-hidden="true">▤</span><span>待处理举报</span>
+          </button>
+        </section>
+        <button id="my-logout-btn" class="sidebar-logout" type="button">
+          <span aria-hidden="true">↪</span><span>登出</span>
+        </button>
+      </aside>
+
+      <div id="workspace-main">
+        <section id="chat-view" class="workspace-view chat-workspace-view" aria-label="极光聊窗">
+          <header id="header">
+            <div class="chat-heading">
+              <div class="brand-mark small" aria-hidden="true">极</div>
+              <div>
+                <h1>极光 · 聊窗</h1>
+                <p>
+                  <span class="status-dot"></span><span id="connection-status">正在连接...</span>
+                  <span class="online-count">· <span id="online-count">0</span> 人在线</span>
+                </p>
               </div>
-              <button id="reply-cancel-btn" type="button" aria-label="取消引用">×</button>
             </div>
-            <textarea id="msg-input" placeholder="说点什么吧..." maxlength="300" aria-label="输入消息" aria-controls="mention-picker" aria-autocomplete="list" aria-expanded="false"></textarea>
-            <div class="composer-footer">
-              <span>Enter 发送 · Shift + Enter 换行</span>
-              <span id="char-count">0 / 300</span>
+            <div class="header-actions">
+              <button id="chat-members-btn" type="button">成员</button>
+            </div>
+          </header>
+          <div id="messages" aria-live="polite" aria-label="聊天消息">
+            <div class="empty-state" id="empty-state">
+              <span class="empty-icon" aria-hidden="true">✦</span>
+              <strong>这里暂时还没有消息</strong>
+              <span>发送第一条消息，开启对话吧。</span>
             </div>
           </div>
-          <button id="send-btn" type="submit" aria-label="发送消息">
-            <span>发送</span><span aria-hidden="true">↑</span>
-          </button>
-        </div>
-      </form>
+          <div id="message-context-menu" class="message-context-menu" role="menu" hidden>
+            <button id="quote-message-btn" type="button" role="menuitem">引用</button>
+            <button id="report-message-btn" type="button" role="menuitem">举报</button>
+          </div>
+          <form id="message-form">
+            <div id="input-area">
+              <button id="mention-toggle" class="mention-toggle" type="button" aria-label="提及用户" title="提及用户">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16.5 8.5v5a2.5 2.5 0 0 0 5 0v-2a9.5 9.5 0 1 0-3.1 7.05"/><circle cx="11" cy="12" r="4.5"/><path d="M15.5 12v1.5"/></svg>
+              </button>
+              <div class="composer">
+                <div id="mention-picker" class="mention-picker" role="listbox" aria-label="提及用户" hidden></div>
+                <div id="reply-preview" class="reply-preview" hidden>
+                  <div class="reply-preview-content">
+                    <span id="reply-preview-label">引用</span>
+                    <span id="reply-preview-text"></span>
+                  </div>
+                  <button id="reply-cancel-btn" type="button" aria-label="取消引用">×</button>
+                </div>
+                <textarea id="msg-input" placeholder="说点什么吧..." maxlength="300" aria-label="输入消息" aria-controls="mention-picker" aria-autocomplete="list" aria-expanded="false"></textarea>
+                <div class="composer-footer">
+                  <span>Enter 发送 · Shift + Enter 换行</span>
+                  <span id="char-count">0 / 300</span>
+                </div>
+              </div>
+              <button id="send-btn" type="submit" aria-label="发送消息">
+                <span>发送</span><span aria-hidden="true">↑</span>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section id="account-view" class="workspace-view settings-workspace-view" aria-labelledby="account-view-title" hidden>
+          <header class="workspace-page-header">
+            <p class="workspace-eyebrow">PROFILE &amp; SECURITY</p>
+            <h1 id="account-view-title">账户 · 安全</h1>
+            <p>管理你的头像、昵称与登录安全。</p>
+          </header>
+          <div class="settings-card">
+            <div class="my-profile">
+              <div class="my-profile-identity">
+                <button id="my-profile-avatar" class="my-profile-avatar" type="button" aria-label="点击更改头像">
+                  <span id="my-profile-avatar-image" class="my-profile-avatar-image"></span>
+                  <span class="my-profile-avatar-edit" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+                  </span>
+                </button>
+                <div class="my-profile-details">
+                  <div class="my-profile-name-row">
+                    <strong id="my-profile-name"></strong>
+                    <button id="my-name-edit-btn" class="icon-button" type="button" aria-label="更改用户名">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+                    </button>
+                  </div>
+                  <div class="my-profile-role-row"><span id="my-profile-role" class="role-badges"></span></div>
+                  <p class="my-account-line">账户名：<span id="my-account"></span></p>
+                </div>
+              </div>
+              <input type="file" id="avatar-input" accept="image/*" aria-label="选择头像" hidden onchange="uploadAvatar(this)">
+              <form id="my-name-edit-form" class="my-name-edit-form" hidden>
+                <label for="my-name-input">新用户名</label>
+                <input id="my-name-input" type="text" autocomplete="nickname" required>
+                <p id="my-name-msg" role="status" aria-live="polite"></p>
+                <div class="btn-group">
+                  <button id="my-name-cancel-btn" type="button" class="secondary-btn">取消</button>
+                  <button id="my-name-save-btn" type="submit" class="primary-btn">保存</button>
+                </div>
+              </form>
+              <div class="my-profile-actions">
+                <button id="change-password-btn" class="secondary-btn" type="button">修改密码</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="appearance-view" class="workspace-view settings-workspace-view" aria-labelledby="appearance-view-title" hidden>
+          <header class="workspace-page-header">
+            <p class="workspace-eyebrow">APPEARANCE</p>
+            <h1 id="appearance-view-title">外观 · 设置</h1>
+            <p>调整语言与聊天室的显示主题。</p>
+          </header>
+          <div class="settings-card appearance-settings">
+            <section class="appearance-setting-group" aria-labelledby="theme-setting-title">
+              <div>
+                <h2 id="theme-setting-title">主题切换</h2>
+                <p>选择你喜欢的极光色彩。</p>
+              </div>
+              <div class="theme-choice-group" role="group" aria-label="主题切换">
+                <button class="theme-choice" type="button" data-theme-choice="night" aria-pressed="false">极光 · 暗光</button>
+                <button class="theme-choice" type="button" data-theme-choice="day" aria-pressed="true">极光 · 亮白</button>
+              </div>
+            </section>
+            <section class="appearance-setting-group" aria-labelledby="language-setting-title">
+              <div>
+                <h2 id="language-setting-title">语言</h2>
+                <p>更改界面显示语言。</p>
+              </div>
+              <button id="language-toggle" class="language-toggle" type="button" aria-label="选择语言" aria-haspopup="dialog" aria-controls="language-dialog">
+                <span id="current-language-label">简体中文</span>
+                <span aria-hidden="true">⌄</span>
+              </button>
+            </section>
+          </div>
+        </section>
+      </div>
     </section>
 
     <dialog id="members-dialog" aria-labelledby="members-title">
       <div class="members-dialog-header">
         <div>
-          <h2 id="members-title">极简聊窗成员</h2>
+          <h2 id="members-title">极光聊窗成员</h2>
           <p id="members-count">正在加载...</p>
         </div>
         <button id="members-close" type="button" aria-label="关闭成员列表">×</button>
       </div>
       <div id="members-list" aria-live="polite"></div>
-    </dialog>
-
-    <dialog id="my-dialog" aria-labelledby="my-dialog-title">
-      <div class="members-dialog-header">
-        <div>
-          <h2 id="my-dialog-title">我的</h2>
-          <p>管理你的个人资料</p>
-        </div>
-        <button id="my-dialog-close" type="button" aria-label="关闭">×</button>
-      </div>
-      <div class="my-profile">
-        <div class="my-profile-identity">
-          <button id="my-profile-avatar" class="my-profile-avatar" type="button" aria-label="点击更改头像">
-            <span id="my-profile-avatar-image" class="my-profile-avatar-image"></span>
-            <span class="my-profile-avatar-edit" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
-            </span>
-          </button>
-          <div class="my-profile-details">
-            <div class="my-profile-name-row">
-              <strong id="my-profile-name"></strong>
-              <button id="my-name-edit-btn" class="icon-button" type="button" aria-label="更改用户名">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
-              </button>
-            </div>
-            <div class="my-profile-role-row"><span id="my-profile-role" class="role-badges"></span></div>
-            <p class="my-account-line">账户名：<span id="my-account"></span></p>
-          </div>
-        </div>
-        <input type="file" id="avatar-input" accept="image/*" aria-label="选择头像" hidden onchange="uploadAvatar(this)">
-        <form id="my-name-edit-form" class="my-name-edit-form" hidden>
-          <label for="my-name-input">新用户名</label>
-          <input id="my-name-input" type="text" autocomplete="nickname" required>
-          <p id="my-name-msg" role="status" aria-live="polite"></p>
-          <div class="btn-group">
-            <button id="my-name-cancel-btn" type="button" class="secondary-btn">取消</button>
-            <button id="my-name-save-btn" type="submit" class="primary-btn">保存</button>
-          </div>
-        </form>
-        <section class="my-preferences" aria-labelledby="my-preferences-title">
-          <h3 id="my-preferences-title">显示偏好</h3>
-          <div class="my-preference-actions">
-            <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">切换到极夜</button>
-            <button id="language-toggle" class="language-toggle" type="button" aria-label="选择语言" aria-haspopup="dialog" aria-controls="language-dialog">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
-            </button>
-          </div>
-        </section>
-        <div class="my-profile-actions">
-          <button id="change-password-btn" class="secondary-btn" type="button">修改密码</button>
-          <button id="my-logout-btn" class="secondary-btn" type="button">退出登录</button>
-        </div>
-      </div>
     </dialog>
 
     <dialog id="language-dialog" aria-labelledby="language-dialog-title">
