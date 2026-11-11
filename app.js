@@ -23,6 +23,8 @@ let reportReviewerName = '';
 let pendingReportReview = null;
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
+const workspaceAnimationTimers = new WeakMap();
+const supportedAccentColors = new Set(['aurora', 'deepsea', 'sunset', 'miku']);
 
 const translations = {
   '极简聊窗': 'Minimal Chat',
@@ -35,11 +37,17 @@ const translations = {
   '待处理举报': 'Pending reports',
   '登出': 'Log out',
   '主题切换': 'Theme',
-  '选择你喜欢的极光色彩。': 'Choose your preferred Aurora theme.',
+  '在明亮与黑暗界面间切换。': 'Switch between light and dark interfaces.',
+  '明亮界面': 'Light interface',
+  '黑暗界面': 'Dark interface',
+  '主题配色': 'Theme palette',
+  '四种主题均支持明亮与黑暗界面。': 'All four themes are available in light and dark modes.',
+  '绚彩极光 · 青蓝星海': 'Prismatic Aurora · Azure Starsea',
+  '深蓝幽紫 · 幻海之境': 'Deep Blue & Violet · Mirage Sea',
+  '橙霞入暮 · 藏蓝沉星': 'Sunset Glow · Midnight Stars',
+  '初音青绿 · 蔚蓝天依': 'Miku Teal · Tianyi Azure',
   '语言': 'Language',
   '更改界面显示语言。': 'Change the interface language.',
-  '极光 · 暗光': 'Aurora · Dark',
-  '极光 · 亮白': 'Aurora · Light',
   '管理你的头像、昵称与登录安全。': 'Manage your avatar, display name, and sign-in security.',
   'PROFILE & SECURITY': 'PROFILE & SECURITY',
   'APPEARANCE': 'APPEARANCE',
@@ -291,11 +299,17 @@ const localeTranslations = {
     '待处理举报': '未処理の報告',
     '登出': 'ログアウト',
     '主题切换': 'テーマ',
-    '选择你喜欢的极光色彩。': 'お好みのオーロラテーマを選択してください。',
+    '在明亮与黑暗界面间切换。': 'ライトモードとダークモードを切り替えます。',
+    '明亮界面': 'ライトモード',
+    '黑暗界面': 'ダークモード',
+    '主题配色': 'テーマカラー',
+    '四种主题均支持明亮与黑暗界面。': '4種類のテーマはすべてライト・ダークに対応しています。',
+    '绚彩极光 · 青蓝星海': '絢彩オーロラ · 青藍の星海',
+    '深蓝幽紫 · 幻海之境': '深藍幽紫 · 幻海の境',
+    '橙霞入暮 · 藏蓝沉星': '橙霞の夕暮れ · 藍に沈む星',
+    '初音青绿 · 蔚蓝天依': '初音グリーン · 蔚藍の天依',
     '语言': '言語',
     '更改界面显示语言。': '画面の表示言語を変更します。',
-    '极光 · 暗光': 'オーロラ · ダーク',
-    '极光 · 亮白': 'オーロラ · ライト',
     '管理你的头像、昵称与登录安全。': 'アバター、表示名、ログインの安全性を管理します。',
     '登录后加入对话，和大家分享此刻。': 'ログインして会話に参加し、今この瞬間を共有しましょう。',
     '账户名': 'アカウント名',
@@ -547,11 +561,17 @@ const localeTranslations = {
     '待处理举报': '待處理檢舉',
     '登出': '登出',
     '主题切换': '主題切換',
-    '选择你喜欢的极光色彩。': '選擇你喜歡的極光色彩。',
+    '在明亮与黑暗界面间切换。': '切換明亮與黑暗介面。',
+    '明亮界面': '明亮介面',
+    '黑暗界面': '黑暗介面',
+    '主题配色': '主題配色',
+    '四种主题均支持明亮与黑暗界面。': '四種主題皆支援明亮與黑暗介面。',
+    '绚彩极光 · 青蓝星海': '絢彩極光 · 青藍星海',
+    '深蓝幽紫 · 幻海之境': '深藍幽紫 · 幻海之境',
+    '橙霞入暮 · 藏蓝沉星': '橙霞入暮 · 藏藍沉星',
+    '初音青绿 · 蔚蓝天依': '初音青綠 · 蔚藍天依',
     '语言': '語言',
     '更改界面显示语言。': '更改介面顯示語言。',
-    '极光 · 暗光': '極光 · 暗光',
-    '极光 · 亮白': '極光 · 亮白',
     '管理你的头像、昵称与登录安全。': '管理你的頭像、暱稱與登入安全。',
     '登录后加入对话，和大家分享此刻。': '登入後加入對話，和大家分享此刻。',
     '账户名': '帳號名稱',
@@ -1482,10 +1502,26 @@ function showWorkspaceView(viewName) {
     appearance: document.getElementById('appearance-view')
   };
   if (!Object.prototype.hasOwnProperty.call(views, viewName)) return;
+  const previousView = Object.keys(views).find(name => !views[name].hidden);
+  const changed = previousView !== viewName;
 
   Object.entries(views).forEach(([name, view]) => {
     view.hidden = name !== viewName;
+    if (name !== viewName) {
+      view.classList.remove('workspace-view-entering');
+      window.clearTimeout(workspaceAnimationTimers.get(view));
+      workspaceAnimationTimers.delete(view);
+    }
   });
+  if (changed) {
+    const activeView = views[viewName];
+    void activeView.offsetWidth;
+    activeView.classList.add('workspace-view-entering');
+    workspaceAnimationTimers.set(activeView, window.setTimeout(() => {
+      activeView.classList.remove('workspace-view-entering');
+      workspaceAnimationTimers.delete(activeView);
+    }, 750));
+  }
   document.querySelectorAll('[data-workspace-view]').forEach(button => {
     const active = button.dataset.workspaceView === viewName;
     button.classList.toggle('active', active);
@@ -2225,12 +2261,31 @@ function setTheme(theme) {
     const selected = option.dataset.themeChoice === (isNight ? 'night' : 'day');
     option.setAttribute('aria-pressed', String(selected));
   });
-  document.querySelector('meta[name="theme-color"]').content = isNight ? '#111827' : '#f4f7fb';
+  updateThemeColor();
   try {
     localStorage.setItem('chat-theme', isNight ? 'night' : 'day');
   } catch (error) {
     console.error('无法保存主题偏好：', error);
   }
+}
+
+function setAccentColor(color) {
+  if (!supportedAccentColors.has(color)) return;
+  document.documentElement.dataset.accent = color;
+  document.querySelectorAll('[data-accent-choice]').forEach(option => {
+    option.setAttribute('aria-pressed', String(option.dataset.accentChoice === color));
+  });
+  updateThemeColor();
+  try {
+    localStorage.setItem('chat-accent', color);
+  } catch (error) {
+    console.error('无法保存主题色偏好：', error);
+  }
+}
+
+function updateThemeColor() {
+  const sceneColor = getComputedStyle(document.documentElement).getPropertyValue('--scene-base').trim();
+  document.querySelector('meta[name="theme-color"]').content = sceneColor;
 }
 
 function setLanguage(language) {
@@ -2530,6 +2585,14 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('无法读取主题偏好：', error);
   }
   setTheme(savedTheme);
+  let savedAccent = 'aurora';
+  try {
+    const storedAccent = localStorage.getItem('chat-accent');
+    if (supportedAccentColors.has(storedAccent)) savedAccent = storedAccent;
+  } catch (error) {
+    console.error('无法读取主题色偏好：', error);
+  }
+  setAccentColor(savedAccent);
   const languageButton = document.getElementById('language-toggle');
   const languagePicker = document.getElementById('language-picker');
   languageButton.addEventListener('click', () => {
@@ -2550,6 +2613,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.querySelectorAll('[data-theme-choice]').forEach(option => {
     option.addEventListener('click', () => setTheme(option.dataset.themeChoice));
+  });
+  document.querySelectorAll('[data-accent-choice]').forEach(option => {
+    option.addEventListener('click', () => setAccentColor(option.dataset.accentChoice));
   });
   document.querySelectorAll('[data-workspace-view]').forEach(button => {
     button.addEventListener('click', () => showWorkspaceView(button.dataset.workspaceView));
