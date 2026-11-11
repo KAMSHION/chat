@@ -1666,6 +1666,35 @@ textarea:focus-visible {
   gap: 10px;
 }
 
+.ai-service-source {
+  min-height: 54px;
+  padding: 9px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #edf0f5;
+  color: #8791a5;
+  font-size: 12px;
+}
+
+.ai-service-source a {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.ai-service-source a:focus-visible {
+  outline: 2px solid #aab7f7;
+  outline-offset: 3px;
+}
+
+.ai-service-source svg {
+  display: block;
+  width: 108px;
+  height: auto;
+  color: #34425e;
+}
+
 .report-choice {
   min-height: 68px;
   padding: 12px 14px;
@@ -2436,6 +2465,15 @@ html[data-theme="night"] .report-inbox-item {
   border-color: #3b4659;
   color: #d7deea;
   background: #202a3a;
+}
+
+html[data-theme="night"] .ai-service-source {
+  border-color: #3b4659;
+  color: #9ca8bb;
+}
+
+html[data-theme="night"] .ai-service-source svg {
+  color: #d7deea;
 }
 
 html[data-theme="night"] .report-choice:hover,
