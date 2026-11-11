@@ -3234,23 +3234,23 @@ html[data-theme="night"] .theme-choice[aria-pressed="true"] {
   .sidebar-navigation {
     grid-column: 1 / -1;
     grid-row: 2;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 5px;
   }
 
   .sidebar-nav-item {
     min-height: 38px;
-    padding: 0 7px;
+    padding: 0 3px;
     justify-content: center;
-    gap: 5px;
-    font-size: 10px;
+    gap: 3px;
+    font-size: 9px;
     white-space: nowrap;
   }
 
   .sidebar-nav-icon {
     width: auto;
     flex-basis: auto;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .sidebar-nav-item.active::before {
@@ -3879,10 +3879,6 @@ html[data-theme="night"] .accent-choice {
   }
 }
 
-.sidebar-ai {
-  margin-top: 20px;
-}
-
 .ai-workspace-view {
   position: relative;
   isolation: isolate;
@@ -4256,19 +4252,6 @@ html[data-theme="night"] .ai-chat-form textarea {
 }
 
 @media (max-width: 760px) {
-  .sidebar-ai {
-    grid-column: 1 / -1;
-    margin-top: -5px;
-  }
-
-  .sidebar-ai .sidebar-nav-item {
-    width: 100%;
-    min-height: 34px;
-    padding: 0 12px;
-    justify-content: flex-start;
-    gap: 9px;
-  }
-
   .ai-workspace-view {
     padding: 20px 14px 14px;
     gap: 16px;
