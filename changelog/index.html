@@ -216,7 +216,7 @@
           <details class="release-version">
             <summary><span>2.10.0b</span><small>网站图标与更新日志</small></summary>
             <ul>
-              <li>使用与首页同目录的 kamshion.png 作为网站图标。</li>
+              <li>使用 GitHub 仓库中的 kamshion.png 作为网站图标。</li>
               <li>新增本更新日志页面，按主版本、次版本和修订版本逐层展开查看。</li>
               <li>从登录和注册页面提供更新日志入口。</li>
             </ul>
@@ -250,8 +250,8 @@
       </details>
 
       <details class="release-major" open>
-        <summary><span>3.x</span><small>极光聊窗品牌与界面重做 · 最新 3.0.0a</small></summary>
-        <details class="release-minor" open>
+        <summary><span>3.x</span><small>极光聊窗品牌与界面重做 · 最新 3.1.0b</small></summary>
+        <details class="release-minor">
           <summary><span>3.0</span><small>品牌与工作区重做 · 最新修订 3.0.0a</small></summary>
           <details class="release-version">
             <summary><span>3.0.0a</span><small>极光聊窗</small></summary>
@@ -262,6 +262,19 @@
               <li>主题包括“绚彩极光 · 青蓝星海”“深蓝幽紫 · 幻海之境”“橙霞入暮 · 藏蓝沉星”和“初音青绿 · 蔚蓝天依”，每种均由两种主题色和一种过渡色组成。</li>
               <li>为页面入场、工作区切换和侧栏选中状态增加动画。</li>
               <li>管理员导航集中显示禁言用户与待处理举报入口。</li>
+            </ul>
+          </details>
+        </details>
+        <details class="release-minor" open>
+          <summary><span>3.1</span><small>星火 AI 对话与界面优化 · 最新修订 3.1.0b</small></summary>
+          <details class="release-version" open>
+            <summary><span>3.1.0b</span><small>接入讯飞星火</small></summary>
+            <ul>
+              <li>新增“星火 · AI”对话工作区，接入讯飞星火 <code>spark-x2.5-1.7b</code> 模型，并支持连续对话与新建对话。</li>
+              <li>通过 Cloudflare Pages Functions 在服务端代理模型请求；API Key 使用 <code>XFYUN_API_KEY</code> Secret 保存，不暴露给浏览器。</li>
+              <li>改进 AI 对话界面的消息、输入区与明暗主题样式，并适配窄屏；输入框不可拖动缩放，发送按钮焦点样式与主题保持一致。</li>
+              <li>将 AI 入口并入原有侧边导航，桌面端和移动端均复用统一的导航按钮样式。</li>
+              <li>登录响应不再返回会话令牌，继续仅通过 HttpOnly Cookie 管理登录会话。</li>
             </ul>
           </details>
         </details>

@@ -68,7 +68,7 @@ export async function onRequest(context) {
       if (hash !== user.password_hash) return json({ error: '账户名或密码错误' }, 401);
       const sessionId = crypto.randomUUID();
       await db.prepare("INSERT INTO sessions (session_id, user_id, role, last_seen) VALUES (?, ?, ?, ?)").bind(sessionId, user.id, user.role, Date.now()).run();
-      return new Response(JSON.stringify({ success: true, account: user.account, displayName: user.display_name, userId: user.id, role: user.role, sessionId }), {
+      return new Response(JSON.stringify({ success: true, account: user.account, displayName: user.display_name, userId: user.id, role: user.role }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', 'Set-Cookie': `session=${sessionId}; Path=/; HttpOnly; SameSite=Lax` }
       });
