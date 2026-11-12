@@ -242,14 +242,14 @@
               <li>被指派的审核员可在邮件收件箱中将举报标记为“违规”或“正常”；审核不会自动惩罚用户。</li>
               <li>人工审核员确认“违规”时需填写违规内容；AI 广播通知只显示接口返回的命中类别，不展示命中内容或原消息，疑似结果不作为确认违规广播。</li>
               <li>提供三个 AI 审核接口，服务端代理调用并将结果写入举报记录，不向浏览器暴露 API 密钥。</li>
-              <li>新建数据库需在 D1 执行 <code>reports-schema.sql</code>；已部署数据库需执行相应 migration。两个极数本源接口需配置 <code>APIZERO_API_KEY</code>；UAPIS 可选配置 <code>UAPIS_API_KEY</code> 以使用 Key 对应的调用额度。</li>
+              <li>新建数据库需在 D1 执行 <code>reports-schema.sql</code>；已部署数据库需执行相应 migration。两个极数本源接口需配置 <code>APIZERO_API_KEY</code>；UAPIS 接口使用无 Key 调用。</li>
             </ul>
           </details>
         </details>
       </details>
 
       <details class="release-major" open>
-        <summary><span>3.x</span><small>品牌与界面重做、星火 AI · 最新 3.2.3b</small></summary>
+        <summary><span>3.x</span><small>品牌与界面重做、AI 工作区 · 最新 3.3.2b</small></summary>
         <details class="release-minor">
           <summary><span>3.1</span><small>品牌与工作区重做 · 最新修订 3.1.0a</small></summary>
           <details class="release-version">
@@ -264,7 +264,7 @@
           </details>
         </details>
         <details class="release-minor" open>
-          <summary><span>3.2</span><small>星火 AI 对话与审核 · 最新修订 3.2.3b</small></summary>
+          <summary><span>3.2</span><small>讯飞星火 AI 对话与审核 · 最新修订 3.2.5b</small></summary>
           <details class="release-version">
             <summary><span>3.2.0b</span><small>接入讯飞星火</small></summary>
             <ul>
@@ -296,6 +296,43 @@
               <li>AI 审核新增 UAPIS「敏感词检测（快速）」接口，服务端代理请求并展示违规结论与命中词。</li>
               <li>AI 审核窗口分别展示极数本源和 UAPIS 服务来源标识。</li>
               <li>已部署的 D1 数据库需执行 <code>migrations/0001-uapis-profanity-review.sql</code> 扩展审核类型约束。</li>
+            </ul>
+          </details>
+          <details class="release-version" open>
+            <summary><span>3.2.4b</span><small>更新讯飞星火品牌标识</small></summary>
+            <ul>
+              <li>将 AI 工作区名称更新为“讯飞 · 星火AI”，并在页面标题中使用讯飞星火 Logo。</li>
+              <li>同步更新 AI 欢迎语、助手名称和选项的本地化文案。</li>
+            </ul>
+          </details>
+          <details class="release-version" open>
+            <summary><span>3.2.5b</span><small>恢复侧栏图标并调整 UAPIS 调用方式</small></summary>
+            <ul>
+              <li>讯飞星火的侧栏图标恢复为原来的星形图标，页面标题继续使用讯飞星火 Logo。</li>
+              <li>AI 审核接口 3 改为无 Key 调用，不再发送 UAPIS Authorization 请求头。</li>
+            </ul>
+          </details>
+        </details>
+        <details class="release-minor" open>
+          <summary><span>3.3</span><small>Cloudflare Workers AI · 最新修订 3.3.2b</small></summary>
+          <details class="release-version">
+            <summary><span>3.3.0b</span><small>新增 Workers AI 对话工作区</small></summary>
+            <ul>
+              <li>左侧导航新增 Cloudflare · WorkersAI 工作区，接入 <code>@cf/meta/llama-3.2-1b-instruct</code> 模型并支持连续对话。</li>
+              <li>AI 请求通过 Pages Functions 在服务端代理，不在浏览器中暴露服务凭据。</li>
+            </ul>
+          </details>
+          <details class="release-version">
+            <summary><span>3.3.1b</span><small>切换为 REST API Key 调用</small></summary>
+            <ul>
+              <li>Workers AI 改为调用 Cloudflare REST API；在 Pages 配置 <code>CLOUDFLARE_ACCOUNT_ID</code> 和 <code>CLOUDFLARE_API_TOKEN</code>，无需添加 AI 绑定。</li>
+              <li>Cloudflare API Token 需拥有 Workers AI Read 和 Workers AI Edit 权限。</li>
+            </ul>
+          </details>
+          <details class="release-version" open>
+            <summary><span>3.3.2b</span><small>Workers AI 界面焕新</small></summary>
+            <ul>
+              <li>Workers AI 页面改为清爽简约的对话布局，加入 Cloudflare 标识、居中欢迎区和轻量消息输入框，并适配明暗主题与窄屏。</li>
             </ul>
           </details>
         </details>

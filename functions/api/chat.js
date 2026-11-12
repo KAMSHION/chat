@@ -292,6 +292,86 @@ export async function onRequest(context) {
       });
     }
 
+    if (action === 'chatWithWorkersAi') {
+      let payload;
+      try {
+        payload = await request.json();
+      } catch {
+        return json({ error: 'Workers AI 请求无效，请检查输入内容。' }, 400);
+      }
+
+      if (!Array.isArray(payload?.messages) || payload.messages.length === 0) {
+        return json({ error: 'Workers AI 请求无效，请检查输入内容。' }, 400);
+      }
+      const messages = [];
+      for (const message of payload.messages) {
+        if (
+          !message ||
+          !['user', 'assistant'].includes(message.role) ||
+          typeof message.content !== 'string' ||
+          !message.content.trim()
+        ) {
+          return json({ error: 'Workers AI 请求无效，请检查输入内容。' }, 400);
+        }
+        messages.push({ role: message.role, content: message.content });
+      }
+      if (messages[messages.length - 1].role !== 'user') {
+        return json({ error: 'Workers AI 请求无效，请检查输入内容。' }, 400);
+      }
+      const accountId = typeof env.CLOUDFLARE_ACCOUNT_ID === 'string' ? env.CLOUDFLARE_ACCOUNT_ID.trim() : '';
+      const apiToken = typeof env.CLOUDFLARE_API_TOKEN === 'string' ? env.CLOUDFLARE_API_TOKEN.trim() : '';
+      if (!/^[a-f0-9]{32}$/i.test(accountId) || !apiToken) {
+        return json({ error: 'Workers AI 服务尚未配置，请联系网站管理员。' }, 503);
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120_000);
+      let providerResponse;
+      try {
+        providerResponse = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/@cf/meta/llama-3.2-1b-instruct`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ messages }),
+            signal: controller.signal
+          }
+        );
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error?.name === 'AbortError') {
+          return json({ error: 'Workers AI 服务响应超时，请稍后重试。' }, 504);
+        }
+        console.error('Cloudflare Workers AI API 连接失败：', error?.name || 'NetworkError');
+        return json({ error: 'Workers AI 请求失败，请稍后重试。' }, 502);
+      }
+      let providerPayload;
+      try {
+        providerPayload = await providerResponse.json();
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error?.name === 'AbortError') {
+          return json({ error: 'Workers AI 服务响应超时，请稍后重试。' }, 504);
+        }
+        console.error('Cloudflare Workers AI API 返回了无法解析的响应：', providerResponse.status);
+        return json({ error: 'Workers AI 返回了无效响应，请稍后重试。' }, 502);
+      }
+      clearTimeout(timeoutId);
+      if (!providerResponse.ok || providerPayload?.success !== true) {
+        console.error('Cloudflare Workers AI API 返回错误状态：', providerResponse.status);
+        return json({ error: 'Workers AI 请求失败，请稍后重试。' }, 502);
+      }
+      const reply = providerPayload?.result?.response;
+      if (typeof reply !== 'string' || !reply.trim()) {
+        console.error('Cloudflare Workers AI API 返回了无法识别的响应。');
+        return json({ error: 'Workers AI 返回了无效响应，请稍后重试。' }, 502);
+      }
+      return json({ reply });
+    }
+
     if (action === 'submitAiReport') {
       const { message_id, provider } = await request.json();
       const messageId = Number(message_id);
@@ -317,12 +397,7 @@ export async function onRequest(context) {
         providerResponse = await fetch(endpoint, {
           method: 'POST',
           headers: provider === 'uapis-profanity'
-            ? {
-              'Content-Type': 'application/json',
-              ...(env.UAPIS_API_KEY && env.UAPIS_API_KEY.trim()
-                ? { 'Authorization': `Bearer ${env.UAPIS_API_KEY.trim()}` }
-                : {})
-            }
+            ? { 'Content-Type': 'application/json' }
             : {
             'Authorization': `Bearer ${env.APIZERO_API_KEY}`,
             'Content-Type': 'application/json'
