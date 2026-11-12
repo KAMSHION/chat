@@ -128,6 +128,13 @@ const translations = {
   'AI智能处理': 'AI moderation',
   'AI审核（接口1）': 'AI审核（接口1）',
   'AI审核（接口2）': 'AI审核（接口2）',
+  'AI审核（接口3）': 'AI审核（接口3）',
+  '敏感词检测': 'Sensitive word check',
+  'UAPIS敏感词检测': 'UAPIS sensitive word check',
+  '快速检测 · 接口3': 'Quick check · API 3',
+  '命中敏感词：': 'Matched sensitive words:',
+  'UAPIS': 'UAPIS',
+  '极数本源': 'Jishu Benyuan',
   '提交审核': 'Submit for review',
   '举报审核邮件': 'Report inbox',
   '待审核': 'Pending review',
@@ -166,6 +173,7 @@ const translations = {
   '举报理由不能为空且不能超过500个字符': 'A report reason is required and must be 500 characters or fewer',
   '所选审核员无效': 'The selected reviewer is invalid',
   'AI审核接口无效': 'Invalid AI review API',
+  'AI审核服务返回了无法识别的结果': 'The AI review service returned an unrecognized result.',
   '消息长度不符合AI审核接口要求': 'Message length is outside the AI review API limits',
   'AI审核服务尚未配置，请联系网站管理员': 'AI review is not configured. Contact the site administrator.',
   'AI审核服务暂时不可用，请稍后重试': 'AI review is temporarily unavailable. Try again later.',
@@ -411,6 +419,13 @@ const localeTranslations = {
     'AI智能处理': 'AI審査',
     'AI审核（接口1）': 'AI审核（接口1）',
     'AI审核（接口2）': 'AI审核（接口2）',
+    'AI审核（接口3）': 'AI审核（接口3）',
+    '敏感词检测': '敏感語チェック',
+    'UAPIS敏感词检测': 'UAPIS 敏感語チェック',
+    '快速检测 · 接口3': 'クイックチェック · API 3',
+    '命中敏感词：': '該当する敏感語：',
+    'UAPIS': 'UAPIS',
+    '极数本源': '極数本源',
     '提交审核': '審査を送信',
     '举报审核邮件': '報告受信箱',
     '待审核': '審査待ち',
@@ -696,6 +711,13 @@ const localeTranslations = {
     'AI智能处理': 'AI 智慧審核',
     'AI审核（接口1）': 'AI审核（接口1）',
     'AI审核（接口2）': 'AI审核（接口2）',
+    'AI审核（接口3）': 'AI审核（介面3）',
+    '敏感词检测': '敏感詞檢測',
+    'UAPIS敏感词检测': 'UAPIS 敏感詞檢測',
+    '快速检测 · 接口3': '快速檢測 · 介面3',
+    '命中敏感词：': '命中敏感詞：',
+    'UAPIS': 'UAPIS',
+    '极数本源': '極數本源',
     '提交审核': '提交審核',
     '举报审核邮件': '檢舉審核信箱',
     '待审核': '待審核',
@@ -1477,18 +1499,25 @@ async function submitManualReport(event) {
 function renderAiReviewResult(provider, result) {
   const container = document.getElementById('ai-result-content');
   container.replaceChildren();
-  const providerName = provider === 'content-moderation' ? 'AI审核（接口1）' : 'AI审核（接口2）';
+  const providerName = provider === 'content-moderation'
+    ? 'AI审核（接口1）'
+    : provider === 'text-censor' ? 'AI审核（接口2）' : 'UAPIS敏感词检测';
   const fields = provider === 'content-moderation'
     ? [
         ['审核结论：', result.is_pass ? localizeText('正常') : localizeText('违规')],
         ['风险等级：', result.risk_level],
         ['命中类别：', (result.categories || []).join('、')]
       ]
-    : [
+    : provider === 'text-censor'
+      ? [
         ['审核结论：', result.conclusion || localizeText('未知')],
         ['命中类别：', (result.violation_categories || []).join('、')],
         ['命中内容：', (result.violations || []).join('、')]
-      ];
+      ]
+      : [
+          ['审核结论：', result.is_forbidden ? localizeText('违规') : localizeText('正常')],
+          ['命中敏感词：', (result.forbidden_words || []).join('、')]
+        ];
   const providerLine = document.createElement('p');
   providerLine.textContent = `${localizeText('AI审核接口')}：${localizeText(providerName)}`;
   container.appendChild(providerLine);

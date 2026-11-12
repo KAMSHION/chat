@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS reports (
   reported_user_id INTEGER NOT NULL,
   message_id INTEGER NOT NULL,
   reviewer_id INTEGER,
-  review_type TEXT NOT NULL CHECK (review_type IN ('manual', 'content-moderation', 'text-censor')),
+  review_type TEXT NOT NULL CHECK (review_type IN ('manual', 'content-moderation', 'text-censor', 'uapis-profanity')),
   status TEXT NOT NULL CHECK (status IN ('pending', 'ai_reviewed', 'reviewed')),
   reason TEXT,
   message_text TEXT NOT NULL,

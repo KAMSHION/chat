@@ -296,15 +296,17 @@ export async function onRequest(context) {
       const { message_id, provider } = await request.json();
       const messageId = Number(message_id);
       if (!Number.isSafeInteger(messageId) || messageId <= 0) return json({ error: '举报的消息无效' }, 400);
-      if (!['content-moderation', 'text-censor'].includes(provider)) return json({ error: 'AI审核接口无效' }, 400);
+      if (!['content-moderation', 'text-censor', 'uapis-profanity'].includes(provider)) return json({ error: 'AI审核接口无效' }, 400);
       const reported = await reportableMessage(messageId, session.user_id);
       if (reported.error) return reported.error;
       if (reported.messageText.length === 0 || reported.messageText.length > 5000) return json({ error: '消息长度不符合AI审核接口要求' }, 400);
-      if (!env.APIZERO_API_KEY) return json({ error: 'AI审核服务尚未配置，请联系网站管理员' }, 503);
+      if (provider !== 'uapis-profanity' && !env.APIZERO_API_KEY) return json({ error: 'AI审核服务尚未配置，请联系网站管理员' }, 503);
 
-      const endpoint = provider === 'content-moderation'
-        ? 'https://v1.apizero.cn/api/content-moderation'
-        : 'https://v1.apizero.cn/api/text-censor';
+      const endpoint = provider === 'uapis-profanity'
+        ? 'https://uapis.cn/api/v1/text/profanitycheck'
+        : provider === 'content-moderation'
+          ? 'https://v1.apizero.cn/api/content-moderation'
+          : 'https://v1.apizero.cn/api/text-censor';
       const requestBody = provider === 'content-moderation'
         ? { action: 'moderate', text: reported.messageText, mask: false }
         : { text: reported.messageText };
@@ -314,7 +316,14 @@ export async function onRequest(context) {
       try {
         providerResponse = await fetch(endpoint, {
           method: 'POST',
-          headers: {
+          headers: provider === 'uapis-profanity'
+            ? {
+              'Content-Type': 'application/json',
+              ...(env.UAPIS_API_KEY && env.UAPIS_API_KEY.trim()
+                ? { 'Authorization': `Bearer ${env.UAPIS_API_KEY.trim()}` }
+                : {})
+            }
+            : {
             'Authorization': `Bearer ${env.APIZERO_API_KEY}`,
             'Content-Type': 'application/json'
           },
@@ -336,12 +345,31 @@ export async function onRequest(context) {
       } catch {
         return json({ error: 'AI审核服务返回了无效响应，请稍后重试' }, 502);
       }
-      if (!providerPayload || typeof providerPayload !== 'object' || providerPayload.code !== 0 || !providerPayload.data) {
-        return json({ error: providerPayload?.msg || 'AI审核未能完成，请稍后重试' }, 502);
+      if (!providerPayload || typeof providerPayload !== 'object') {
+        return json({ error: 'AI审核服务返回了无效响应' }, 502);
+      }
+      if (provider === 'uapis-profanity') {
+        if (
+          typeof providerPayload.status !== 'string' ||
+          !providerPayload.status.trim() ||
+          !Array.isArray(providerPayload.forbidden_words) ||
+          providerPayload.forbidden_words.length > 100 ||
+          !providerPayload.forbidden_words.every(word => typeof word === 'string' && word.trim() && word.length <= 160)
+        ) {
+          return json({ error: providerPayload.message || 'AI审核服务返回了无法识别的结果' }, 502);
+        }
+      } else if (providerPayload.code !== 0 || !providerPayload.data) {
+        return json({ error: providerPayload.msg || 'AI审核未能完成，请稍后重试' }, 502);
       }
 
       let result;
-      if (provider === 'content-moderation') {
+      if (provider === 'uapis-profanity') {
+        result = {
+          status: providerPayload.status,
+          is_forbidden: providerPayload.status === 'forbidden' || providerPayload.forbidden_words.length > 0,
+          forbidden_words: providerPayload.forbidden_words
+        };
+      } else if (provider === 'content-moderation') {
         if (
           typeof providerPayload.data.is_pass !== 'boolean' ||
           typeof providerPayload.data.risk_level !== 'string' ||
@@ -383,7 +411,9 @@ export async function onRequest(context) {
 
       const isConfirmedViolation = provider === 'content-moderation'
         ? result.is_pass === false
-        : result.is_compliant === false && result.is_suspected === false;
+        : provider === 'text-censor'
+          ? result.is_compliant === false && result.is_suspected === false
+          : result.is_forbidden;
       const violationCategories = [];
       const addViolationCategory = value => {
         if (typeof value !== 'string') return;
@@ -392,8 +422,10 @@ export async function onRequest(context) {
       };
       if (provider === 'content-moderation') {
         result.categories.forEach(addViolationCategory);
-      } else {
+      } else if (provider === 'text-censor') {
         result.violation_categories.forEach(addViolationCategory);
+      } else if (isConfirmedViolation) {
+        addViolationCategory('敏感词');
       }
       const reportStatements = [db.prepare(`
         INSERT INTO reports (
@@ -424,7 +456,9 @@ export async function onRequest(context) {
         `).bind(
           reported.message.user_id,
           session.user_id,
-          provider === 'content-moderation' ? 'AI审核（接口1）' : 'AI审核（接口2）',
+          provider === 'content-moderation'
+            ? 'AI审核（接口1）'
+            : provider === 'text-censor' ? 'AI审核（接口2）' : 'UAPIS敏感词检测',
           violationCategories.join('、').slice(0, 500),
           notificationTime
         ));
