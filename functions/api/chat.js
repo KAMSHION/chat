@@ -209,23 +209,19 @@ export async function onRequest(context) {
         return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
       }
 
-      if (!Array.isArray(payload?.messages) || payload.messages.length === 0 || payload.messages.length > 20) {
+      if (!Array.isArray(payload?.messages) || payload.messages.length === 0) {
         return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
       }
       const messages = [];
-      let totalLength = 0;
       for (const message of payload.messages) {
         if (
           !message ||
           !['user', 'assistant'].includes(message.role) ||
           typeof message.content !== 'string' ||
-          !message.content.trim() ||
-          message.content.length > 4000
+          !message.content.trim()
         ) {
           return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
         }
-        totalLength += message.content.length;
-        if (totalLength > 20000) return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
         messages.push({ role: message.role, content: message.content });
       }
       if (messages[messages.length - 1].role !== 'user') {
@@ -236,8 +232,18 @@ export async function onRequest(context) {
       if (!apiKey) return json({ error: '讯飞星火服务尚未配置，请联系网站管理员。' }, 503);
       const model = 'spark-x2.5-1.7b';
 
+      const requestBody = {
+        model,
+        messages,
+        stream: false,
+        thinking: { type: payload.thinking === true ? 'enabled' : 'disabled' }
+      };
+      if (payload.webSearch === true) {
+        requestBody.tools = [{ type: 'web_search', web_search: { enable: true } }];
+      }
+
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60_000);
+      const timeoutId = setTimeout(() => controller.abort(), 120_000);
       let providerResponse;
       try {
         providerResponse = await fetch('https://maas-api.cn-huabei-1.xf-yun.com/v2/chat/completions', {
@@ -246,12 +252,7 @@ export async function onRequest(context) {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            model,
-            messages,
-            stream: false,
-            max_completion_tokens: 1024
-          }),
+          body: JSON.stringify(requestBody),
           signal: controller.signal
         });
       } catch (error) {
@@ -280,11 +281,15 @@ export async function onRequest(context) {
       }
       clearTimeout(timeoutId);
       const reply = providerPayload?.choices?.[0]?.message?.content;
-      if (typeof reply !== 'string' || !reply.trim() || reply.length > 20000) {
+      if (typeof reply !== 'string' || !reply.trim()) {
         console.error('讯飞星火 API 返回了无法识别的响应。');
         return json({ error: '讯飞星火服务返回了无效响应，请稍后重试。' }, 502);
       }
-      return json({ reply });
+      const reasoning = providerPayload?.choices?.[0]?.message?.reasoning_content;
+      return json({
+        reply,
+        ...(payload.thinking === true && typeof reasoning === 'string' && reasoning.trim() ? { reasoning } : {})
+      });
     }
 
     if (action === 'submitAiReport') {

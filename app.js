@@ -33,11 +33,16 @@ const translations = {
   '极光聊窗': 'Aurora Chat',
   '极光 · 聊窗': 'Aurora · Chat',
   '星火 · AI': 'Spark · AI',
+  '星火 AI 选项': 'Spark AI options',
+  '思考模式': 'Thinking mode',
+  '联网模式': 'Web search mode',
   'AI助手': 'AI assistant',
   'AI对话': 'AI conversation',
   '与讯飞星火模型对话。你发送的内容会传给讯飞星火处理。': 'Chat with iFLYTEK Spark. Messages you send are sent to iFLYTEK for processing.',
   '新建对话': 'New chat',
-  '你好！我是极光 AI，有什么可以帮你？': 'Hello! I am Aurora AI. How can I help?',
+  '你好！我是星火 AI，有什么可以帮你？': 'Hello! I am Spark AI. How can I help?',
+  '思考': 'Thinking',
+  '星火 AI': 'Spark AI',
   '输入问题，Enter 发送，Shift + Enter 换行': 'Enter a question. Press Enter to send, or Shift + Enter for a new line.',
   '对话仅保存在当前页面；刷新或登出后会清空。': 'This conversation stays in this page only and is cleared when you refresh or log out.',
   '输入问题': 'Enter a question',
@@ -317,7 +322,12 @@ const localeTranslations = {
     'AI对话': 'AI 会話',
     '与讯飞星火模型对话。你发送的内容会传给讯飞星火处理。': 'iFLYTEK Spark モデルと会話できます。送信した内容は iFLYTEK Spark に送信されます。',
     '新建对话': '新しい会話',
-    '你好！我是极光 AI，有什么可以帮你？': 'こんにちは！オーロラ AI です。何かお手伝いできますか？',
+    '你好！我是星火 AI，有什么可以帮你？': 'こんにちは！Spark AI です。何かお手伝いできますか？',
+    '星火 AI 选项': 'Spark AI オプション',
+    '思考模式': '思考モード',
+    '联网模式': 'ウェブ検索モード',
+    '思考': '思考',
+    '星火 AI': 'Spark AI',
     '输入问题，Enter 发送，Shift + Enter 换行': '質問を入力してください。Enter で送信、Shift + Enter で改行します。',
     '对话仅保存在当前页面；刷新或登出后会清空。': '会話はこのページ内のみ保存され、再読み込みまたはログアウトで消去されます。',
     '输入问题': '質問を入力',
@@ -597,7 +607,12 @@ const localeTranslations = {
     'AI对话': 'AI 對話',
     '与讯飞星火模型对话。你发送的内容会传给讯飞星火处理。': '與訊飛星火模型對話。您傳送的內容會提供給訊飛星火處理。',
     '新建对话': '新增對話',
-    '你好！我是极光 AI，有什么可以帮你？': '你好！我是極光 AI，有什麼可以幫你？',
+    '你好！我是星火 AI，有什么可以帮你？': '你好！我是星火 AI，有什麼可以幫你？',
+    '星火 AI 选项': '星火 AI 選項',
+    '思考模式': '思考模式',
+    '联网模式': '網路搜尋模式',
+    '思考': '思考',
+    '星火 AI': '星火 AI',
     '输入问题，Enter 发送，Shift + Enter 换行': '輸入問題，按 Enter 傳送，Shift + Enter 換行。',
     '对话仅保存在当前页面；刷新或登出后会清空。': '對話僅保存在目前頁面；重新整理或登出後會清除。',
     '输入问题': '輸入問題',
@@ -1035,12 +1050,6 @@ async function api(action, method = 'GET', body = null) {
   return await res.json();
 }
 
-function trimAiConversation() {
-  while (aiConversation.length > 20 || aiConversation.reduce((total, message) => total + message.content.length, 0) > 20000) {
-    aiConversation.shift();
-  }
-}
-
 function renderAiConversation() {
   const container = document.getElementById('ai-chat-messages');
   if (!container) return;
@@ -1050,7 +1059,7 @@ function renderAiConversation() {
     const welcome = document.createElement('div');
     welcome.className = 'ai-chat-welcome';
     const title = document.createElement('strong');
-    title.textContent = localizeText('你好！我是极光 AI，有什么可以帮你？');
+    title.textContent = localizeText('你好！我是星火 AI，有什么可以帮你？');
     welcome.appendChild(title);
     container.appendChild(welcome);
     return;
@@ -1060,9 +1069,12 @@ function renderAiConversation() {
     const item = document.createElement('article');
     item.className = 'ai-chat-message';
     item.dataset.role = message.role;
+    if (message.kind) item.dataset.kind = message.kind;
     const label = document.createElement('span');
     label.className = 'ai-chat-message-label';
-    label.textContent = message.role === 'user' ? localizeText('你') : 'AI';
+    label.textContent = message.role === 'user'
+      ? localizeText('你')
+      : message.kind === 'reasoning' ? localizeText('思考') : localizeText('星火 AI');
     const content = document.createElement('p');
     content.className = 'ai-chat-message-content';
     content.textContent = message.content;
@@ -1092,39 +1104,47 @@ async function submitAiChat(event) {
     input.focus();
     return;
   }
-  if (prompt.length > 4000) {
-    status.textContent = localizeText('星火AI请求无效，请检查输入内容。');
-    return;
-  }
-
   aiConversation.push({ role: 'user', content: prompt });
-  trimAiConversation();
   renderAiConversation();
   input.value = '';
   status.textContent = localizeText('思考中...');
   isAiRequestInProgress = true;
   input.disabled = true;
-  document.getElementById('ai-chat-submit-btn').disabled = true;
-  document.getElementById('ai-chat-clear-btn').disabled = true;
+  const submitButton = document.getElementById('ai-chat-submit-btn');
+  const clearButton = document.getElementById('ai-chat-clear-btn');
+  const thinkingToggle = document.getElementById('ai-thinking-toggle');
+  const webSearchToggle = document.getElementById('ai-web-search-toggle');
+  submitButton.disabled = true;
+  clearButton.disabled = true;
+  thinkingToggle.disabled = true;
+  webSearchToggle.disabled = true;
 
   try {
-    const response = await api('chatWithAi', 'POST', { messages: aiConversation });
+    const response = await api('chatWithAi', 'POST', {
+      messages: aiConversation.filter(message => message.kind !== 'reasoning'),
+      thinking: thinkingToggle.checked,
+      webSearch: webSearchToggle.checked
+    });
     if (response.error) throw new Error(response.error);
     if (typeof response.reply !== 'string' || !response.reply.trim()) {
       throw new Error('AI暂时无法回复，请稍后重试。');
     }
+    if (typeof response.reasoning === 'string' && response.reasoning.trim()) {
+      aiConversation.push({ role: 'assistant', kind: 'reasoning', content: response.reasoning });
+    }
     aiConversation.push({ role: 'assistant', content: response.reply });
-    trimAiConversation();
     renderAiConversation();
     status.textContent = '';
   } catch (error) {
     status.textContent = localizeText(error.message) || localizeText('AI暂时无法回复，请稍后重试。');
-    console.error('极光 AI 请求失败：', error);
+    console.error('星火 AI 请求失败：', error);
   } finally {
     isAiRequestInProgress = false;
     input.disabled = false;
-    document.getElementById('ai-chat-submit-btn').disabled = false;
-    document.getElementById('ai-chat-clear-btn').disabled = false;
+    submitButton.disabled = false;
+    clearButton.disabled = false;
+    thinkingToggle.disabled = false;
+    webSearchToggle.disabled = false;
     input.focus();
   }
 }

@@ -171,7 +171,7 @@
               <p>与讯飞星火模型对话。你发送的内容会传给讯飞星火处理。</p>
             </div>
             <div class="ai-workspace-actions">
-              <span class="ai-model-badge"><span aria-hidden="true">✦</span> 讯飞星火 · spark-x2.5-1.7b</span>
+              <span class="ai-model-badge"><span aria-hidden="true">✦</span> 讯飞星火 · Spark-x2.5-1.7b</span>
               <button id="ai-chat-clear-btn" class="secondary-btn" type="button">新建对话</button>
             </div>
           </header>
@@ -179,8 +179,20 @@
             <div id="ai-chat-messages" class="ai-chat-messages" aria-live="polite" aria-label="AI对话"></div>
             <p id="ai-chat-status" class="ai-chat-status" role="status" aria-live="polite"></p>
             <form id="ai-chat-form" class="ai-chat-form">
+              <div class="ai-chat-options" role="group" aria-label="星火 AI 选项">
+                <label class="ai-chat-toggle">
+                  <input id="ai-thinking-toggle" type="checkbox">
+                  <span class="ai-chat-toggle-track" aria-hidden="true"></span>
+                  <span class="ai-chat-toggle-label">思考模式</span>
+                </label>
+                <label class="ai-chat-toggle">
+                  <input id="ai-web-search-toggle" type="checkbox">
+                  <span class="ai-chat-toggle-track" aria-hidden="true"></span>
+                  <span class="ai-chat-toggle-label">联网模式</span>
+                </label>
+              </div>
               <label class="sr-only" for="ai-chat-input">输入问题</label>
-              <textarea id="ai-chat-input" maxlength="4000" rows="3" placeholder="输入问题，Enter 发送，Shift + Enter 换行"></textarea>
+              <textarea id="ai-chat-input" rows="3" placeholder="输入问题，Enter 发送，Shift + Enter 换行"></textarea>
               <div class="ai-chat-form-footer">
                 <span>对话仅保存在当前页面；刷新或登出后会清空。</span>
                 <button id="ai-chat-submit-btn" class="primary-btn" type="submit">发送</button>

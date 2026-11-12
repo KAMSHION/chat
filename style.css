@@ -4094,6 +4094,13 @@ html[data-theme="night"] .accent-choice {
   box-shadow: 0 8px 18px rgba(var(--accent-rgb), .2);
 }
 
+.ai-chat-message[data-kind="reasoning"] .ai-chat-message-content {
+  border-color: rgba(112, 126, 151, .12);
+  color: #777f91;
+  background: #f3f5f8;
+  box-shadow: none;
+}
+
 .ai-chat-status {
   min-height: 18px;
   margin: 0;
@@ -4108,6 +4115,75 @@ html[data-theme="night"] .accent-choice {
   gap: 11px;
   border-top: 1px solid rgba(var(--accent-rgb), .11);
   background: linear-gradient(180deg, rgba(var(--accent-rgb), .025), rgba(var(--accent-rgb), .045));
+}
+
+.ai-chat-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px 18px;
+}
+
+.ai-chat-toggle {
+  position: relative;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted, #777591);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 650;
+  user-select: none;
+}
+
+.ai-chat-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.ai-chat-toggle-track {
+  position: relative;
+  width: 34px;
+  height: 19px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(var(--accent-rgb), .22);
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), .1);
+  transition: background .2s, border-color .2s, box-shadow .2s;
+}
+
+.ai-chat-toggle-track::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(30, 35, 60, .2);
+  content: "";
+  transition: transform .2s;
+}
+
+.ai-chat-toggle input:checked + .ai-chat-toggle-track {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.ai-chat-toggle input:checked + .ai-chat-toggle-track::after {
+  transform: translateX(15px);
+}
+
+.ai-chat-toggle input:focus-visible + .ai-chat-toggle-track {
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .2);
+}
+
+.ai-chat-toggle input:disabled + .ai-chat-toggle-track {
+  cursor: wait;
+  opacity: .6;
 }
 
 .ai-chat-form textarea {
@@ -4232,6 +4308,12 @@ html[data-theme="night"] .ai-chat-message[data-role="user"] .ai-chat-message-con
   color: #fff;
   background: linear-gradient(120deg, var(--accent-strong), var(--accent) 56%, var(--accent-secondary));
   box-shadow: 0 8px 20px rgba(var(--accent-rgb), .17);
+}
+
+html[data-theme="night"] .ai-chat-message[data-kind="reasoning"] .ai-chat-message-content {
+  border-color: rgba(164, 175, 194, .12);
+  color: #aab4c4;
+  background: rgba(137, 151, 174, .09);
 }
 
 html[data-theme="night"] .ai-chat-message-label,
