@@ -7,8 +7,8 @@
   font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --blue: #526de5;
-  --blue-dark: #4059ca;
+  --blue: var(--accent);
+  --blue-dark: var(--accent-strong);
   --muted: #8992a5;
 }
 
@@ -1970,7 +1970,7 @@ textarea:focus-visible {
 }
 
 #send-btn:hover:not(:disabled) {
-  background: var(--accent-ink);
+  background: var(--accent-button-hover);
 }
 
 #send-btn:disabled {
@@ -3338,6 +3338,11 @@ html[data-theme="night"] .theme-choice[aria-pressed="true"] {
   --accent-transition: #52a7e8;
   --accent-secondary: #20c7c9;
   --accent-strong: #2856a6;
+  --accent-button-hover: #1d467f;
+  --accent-button-text: #fff;
+  --message-bubble-background: #3269c8;
+  --message-bubble-color: #fff;
+  --message-bubble-quote-background: rgba(255, 255, 255, .52);
   --accent-rgb: 50, 105, 200;
   --accent-ink: #1d467f;
   --accent-soft: #edf3fc;
@@ -3357,6 +3362,11 @@ html[data-accent="deepsea"] {
   --accent-transition: #564fae;
   --accent-secondary: #244c9a;
   --accent-strong: #6d50bb;
+  --accent-button-hover: #514398;
+  --accent-button-text: #fff;
+  --message-bubble-background: #244c9a;
+  --message-bubble-color: #fff;
+  --message-bubble-quote-background: rgba(255, 255, 255, .52);
   --accent-rgb: 138, 104, 219;
   --accent-ink: #514398;
   --accent-soft: #f1efff;
@@ -3372,7 +3382,12 @@ html[data-accent="sunset"] {
   --accent: #f08a4b;
   --accent-transition: #b76877;
   --accent-secondary: #23345e;
-  --accent-strong: #cf6847;
+  --accent-strong: #f08a4b;
+  --accent-button-hover: #8d452c;
+  --accent-button-text: #fff;
+  --message-bubble-background: #f08a4b;
+  --message-bubble-color: #fff;
+  --message-bubble-quote-background: rgba(255, 255, 255, .62);
   --accent-rgb: 240, 138, 75;
   --accent-ink: #8d452c;
   --accent-soft: #fff2eb;
@@ -3387,15 +3402,20 @@ html[data-accent="sunset"] {
 html[data-accent="miku"] {
   --accent: #35b88a;
   --accent-transition: #33a8b7;
-  --accent-secondary: #4c91e8;
-  --accent-strong: #218c86;
+  --accent-secondary: #66ccff;
+  --accent-strong: #66ccff;
+  --accent-button-hover: #5cbfeb;
+  --accent-button-text: #173b4a;
+  --message-bubble-background: #66ccff;
+  --message-bubble-color: #fff;
+  --message-bubble-quote-background: rgba(255, 255, 255, .62);
   --accent-rgb: 53, 184, 138;
   --accent-ink: #176958;
   --accent-soft: #eaf8f4;
   --accent-soft-rgb: 234, 248, 244;
   --scene-base: #eef8f6;
   --scene-transition-rgb: 51, 168, 183;
-  --scene-secondary-rgb: 76, 145, 232;
+  --scene-secondary-rgb: 102, 204, 255;
   --surface-sidebar-end: #f5fbf9;
   --surface-profile: #f2faf8;
 }
@@ -3502,6 +3522,7 @@ body::before {
 
 .primary-btn,
 #send-btn {
+  color: var(--accent-button-text);
   background: var(--accent-strong);
   box-shadow: 0 8px 18px rgba(var(--accent-rgb), .22);
   transition: transform .2s cubic-bezier(.2, .75, .25, 1), box-shadow .2s, filter .2s;
@@ -3509,7 +3530,7 @@ body::before {
 
 .primary-btn:hover,
 #send-btn:hover {
-  background: var(--accent-ink);
+  background: var(--accent-button-hover);
   box-shadow: 0 11px 24px rgba(var(--accent-rgb), .3);
   filter: saturate(1.08);
   transform: translateY(-2px);
@@ -3536,6 +3557,37 @@ textarea:focus-visible {
 .project-support a:hover {
   color: var(--accent-strong);
   background: rgba(var(--accent-rgb), .09);
+}
+
+.message.mine .bubble {
+  border-color: transparent;
+  background: var(--message-bubble-background);
+  box-shadow: 0 3px 10px rgba(42, 55, 87, .08);
+}
+
+.message.mine .content,
+.message.mine .quoted-message {
+  color: var(--message-bubble-color);
+}
+
+.message.mine .quoted-message {
+  border-left-color: currentColor;
+  background: var(--message-bubble-quote-background);
+}
+
+html[data-theme="night"] .message.mine .bubble {
+  border-color: transparent;
+  background: var(--message-bubble-background);
+}
+
+html[data-theme="night"] .message.mine .content,
+html[data-theme="night"] .message.mine .quoted-message {
+  color: var(--message-bubble-color);
+}
+
+html[data-theme="night"] .message.mine .quoted-message {
+  border-left-color: currentColor;
+  background: var(--message-bubble-quote-background);
 }
 
 #chat-panel {
@@ -3821,7 +3873,7 @@ textarea:focus-visible {
 .accent-choice[data-accent-choice="miku"] .accent-choice-swatch {
   --swatch-primary: #35b88a;
   --swatch-transition: #33a8b7;
-  --swatch-secondary: #4c91e8;
+  --swatch-secondary: #66ccff;
 }
 
 html[data-theme="night"] body {
@@ -4253,7 +4305,7 @@ html[data-theme="night"] .accent-choice {
 }
 
 .ai-thinking-segment button[aria-checked="true"] {
-  color: #fff;
+  color: var(--accent-button-text);
   background: var(--accent-strong);
 }
 
@@ -4270,41 +4322,8 @@ html[data-theme="night"] .accent-choice {
 }
 
 .ai-chat-web-setting {
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
+  display: grid;
   gap: 7px;
-}
-
-.ai-chat-web-toggle {
-  min-height: 34px;
-  padding: 0 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(var(--accent-rgb), .2);
-  border-radius: 9px;
-  color: var(--text-muted, #777591);
-  background: var(--surface-card);
-  font-size: 11px;
-  font-weight: 650;
-  transition: color .18s, border-color .18s, background .18s, box-shadow .18s;
-}
-
-.ai-chat-web-toggle:hover {
-  border-color: rgba(var(--accent-rgb), .4);
-  background: var(--accent-soft);
-}
-
-.ai-chat-web-toggle[aria-pressed="true"] {
-  border-color: transparent;
-  color: #fff;
-  background: var(--accent-strong);
-}
-
-.ai-chat-web-toggle:focus-visible {
-  outline: 2px solid rgba(var(--accent-rgb), .58);
-  outline-offset: 2px;
 }
 
 .ai-chat-help {
@@ -4522,8 +4541,8 @@ html[data-theme="night"] .ai-thinking-segment button {
 }
 
 html[data-theme="night"] .ai-thinking-segment button[aria-checked="true"],
-html[data-theme="night"] .ai-chat-web-toggle[aria-pressed="true"] {
-  color: #fff;
+html[data-theme="night"] #ai-web-search-mode button[aria-checked="true"] {
+  color: var(--accent-button-text);
   background: var(--accent-strong);
 }
 
@@ -5034,4 +5053,387 @@ html[data-theme="night"] .workers-ai-composer textarea::placeholder {
   .workers-ai-welcome {
     animation: none;
   }
+}
+
+:root {
+  --theme-hover-surface: rgba(var(--accent-rgb), .08);
+  --theme-selected-surface: rgba(var(--accent-rgb), .12);
+  --theme-selected-text: var(--accent-ink);
+  --theme-border: rgba(var(--accent-rgb), .4);
+  --theme-focus-ring: rgba(var(--accent-rgb), .3);
+}
+
+html[data-theme="night"] {
+  --theme-hover-surface: rgba(var(--accent-rgb), .12);
+  --theme-selected-surface: rgba(var(--accent-rgb), .2);
+  --theme-selected-text: var(--accent);
+  --theme-border: rgba(var(--accent-rgb), .48);
+  --theme-focus-ring: rgba(var(--accent-rgb), .42);
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline-color: var(--theme-focus-ring);
+}
+
+#auth-form input:focus,
+#register-form input:focus,
+.username-form input:focus,
+.username-form textarea:focus,
+.my-name-edit-form input:focus,
+#report-reason:focus {
+  border-color: var(--theme-border);
+  box-shadow: 0 0 0 3px var(--theme-hover-surface);
+}
+
+.username-form input:focus,
+.username-form textarea:focus {
+  outline-color: var(--theme-focus-ring);
+}
+
+.composer:focus-within {
+  border-color: var(--theme-border);
+  box-shadow: 0 0 0 3px var(--theme-hover-surface);
+}
+
+#members-dialog,
+#my-dialog,
+#language-dialog,
+#user-info-dialog,
+#report-dialog,
+#reviewer-dialog,
+#submit-report-dialog,
+#ai-review-dialog,
+#ai-result-dialog,
+#report-inbox-dialog,
+#mute-dialog,
+#change-password-dialog,
+#unmute-dialog {
+  border-color: rgba(var(--accent-rgb), .2);
+}
+
+.secondary-btn:hover:not(:disabled),
+.appearance-setting-group .language-toggle:hover,
+.project-support a:hover,
+#members-dialog #members-close:hover,
+#my-dialog #my-dialog-close:hover,
+#language-dialog #language-dialog-close:hover,
+#user-info-dialog #user-info-close:hover,
+#report-dialog #report-dialog-close:hover,
+#reviewer-dialog #reviewer-dialog-close:hover,
+#submit-report-dialog #submit-report-close:hover,
+#ai-review-dialog #ai-review-close:hover,
+#ai-result-dialog #ai-result-close:hover,
+#report-inbox-dialog #report-inbox-close:hover,
+#mute-dialog #mute-dialog-close:hover,
+#change-password-dialog #change-password-close:hover,
+#unmute-dialog #unmute-dialog-close:hover {
+  border-color: var(--theme-border);
+  color: var(--theme-selected-text);
+  background-color: var(--theme-hover-surface);
+}
+
+.my-button-avatar,
+.my-profile-avatar-image,
+.icon-button:hover,
+.mention-toggle:hover,
+.mention-option:hover,
+.mention-option[aria-selected="true"],
+.message-context-menu button:not(#report-message-btn):hover,
+.message-context-menu button:not(#report-message-btn):focus-visible,
+.project-support a:hover,
+.reply-preview #reply-cancel-btn:hover,
+.language-picker button:hover,
+.language-picker button[aria-pressed="true"],
+.my-preference-actions button:hover,
+.my-profile-actions button:not(#my-logout-btn):hover,
+.theme-choice[aria-pressed="true"],
+.accent-choice[aria-pressed="true"],
+.member-item[aria-selected="true"] {
+  border-color: var(--theme-border);
+  color: var(--theme-selected-text);
+  background-color: var(--theme-selected-surface);
+}
+
+.project-support a {
+  color: var(--accent-ink);
+}
+
+.project-support a:hover {
+  color: var(--theme-selected-text);
+  background-color: var(--theme-hover-surface);
+}
+
+.sidebar-nav-item:hover,
+.sidebar-nav-item.active,
+.chat-workspace-view #header button:hover,
+.member-item:hover,
+.report-choice:hover,
+.report-choice:focus-visible,
+.reviewer-option:hover,
+.ai-review-option:focus-within,
+.language-picker button:hover,
+.language-picker button[aria-pressed="true"],
+.mention-toggle:hover,
+.mention-option:hover,
+.mention-option[aria-selected="true"],
+.message-context-menu button:not(#report-message-btn):hover,
+.message-context-menu button:not(#report-message-btn):focus-visible,
+.icon-button:hover,
+.my-preference-actions button:hover,
+.my-profile-actions button:not(#my-logout-btn):hover {
+  background-color: var(--theme-hover-surface);
+}
+
+.sidebar-nav-item.active,
+.theme-choice[aria-pressed="true"],
+.accent-choice[aria-pressed="true"],
+.language-picker button[aria-pressed="true"],
+.mention-option[aria-selected="true"],
+.reply-preview #reply-cancel-btn:hover {
+  border-color: var(--theme-border);
+  color: var(--theme-selected-text);
+  background-color: var(--theme-selected-surface);
+}
+
+.sidebar-nav-icon,
+.sidebar-nav-item.active .sidebar-nav-icon,
+.my-button-avatar,
+.my-profile-avatar-image,
+.icon-button:hover,
+.message-context-menu button:not(#report-message-btn):hover,
+.message-context-menu button:not(#report-message-btn):focus-visible,
+.workspace-eyebrow,
+.empty-icon,
+.user-badge.ai,
+.message .mention-highlight,
+.reply-preview,
+#reply-preview-label {
+  color: var(--accent);
+}
+
+.icon-button:hover,
+.mention-toggle:hover,
+.mention-option:hover,
+.mention-option[aria-selected="true"],
+.message-context-menu button:not(#report-message-btn):hover,
+.message-context-menu button:not(#report-message-btn):focus-visible,
+.ai-service-source a,
+.user-badge.ai,
+.message .mention-highlight {
+  color: var(--theme-selected-text);
+}
+
+.message .mention-highlight,
+.user-badge.ai {
+  background-color: var(--theme-selected-surface);
+}
+
+.message .avatar,
+.member-avatar {
+  color: var(--theme-selected-text);
+  background-color: var(--theme-selected-surface);
+}
+
+.ai-service-source a:hover {
+  color: var(--accent-strong);
+}
+
+.reviewer-option button {
+  color: var(--accent-button-text);
+  background: var(--accent-strong);
+}
+
+.reviewer-option button:hover {
+  background: var(--accent-button-hover);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+.ai-service-source a:focus-visible,
+.language-picker button:focus-visible,
+.language-toggle:focus-visible,
+.mention-toggle:focus-visible,
+.mention-option:focus-visible,
+.reviewer-option:focus-visible {
+  outline-color: var(--theme-focus-ring);
+}
+
+.reply-preview {
+  border-left-color: var(--accent);
+  background-color: var(--theme-hover-surface);
+}
+
+.message .quoted-message,
+.message.mine .quoted-message {
+  border-left-color: rgba(var(--accent-rgb), .65);
+  color: var(--theme-selected-text);
+  background-color: var(--theme-hover-surface);
+}
+
+.message .quoted-message::-webkit-scrollbar-thumb,
+#messages::-webkit-scrollbar-thumb,
+#members-list::-webkit-scrollbar-thumb {
+  background-color: rgba(var(--accent-rgb), .36);
+}
+
+.message .quoted-message::-webkit-scrollbar-thumb:hover,
+#messages::-webkit-scrollbar-thumb:hover,
+#members-list::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(var(--accent-rgb), .56);
+}
+
+html[data-theme="night"] .sidebar-nav-item:hover,
+html[data-theme="night"] .sidebar-nav-item.active,
+html[data-theme="night"] .language-picker button:hover,
+html[data-theme="night"] .language-picker button[aria-pressed="true"],
+html[data-theme="night"] .theme-choice[aria-pressed="true"],
+html[data-theme="night"] .accent-choice[aria-pressed="true"],
+html[data-theme="night"] .mention-option:hover,
+html[data-theme="night"] .mention-option[aria-selected="true"],
+html[data-theme="night"] .icon-button:hover,
+html[data-theme="night"] .mention-toggle:hover,
+html[data-theme="night"] .my-button-avatar,
+html[data-theme="night"] .my-profile-avatar-image,
+html[data-theme="night"] .empty-icon,
+html[data-theme="night"] .user-badge.ai {
+  border-color: var(--theme-border);
+  color: var(--theme-selected-text);
+  background-color: var(--theme-selected-surface);
+}
+
+html[data-theme="night"] .chat-workspace-view #header button:hover,
+html[data-theme="night"] .my-preference-actions button:hover,
+html[data-theme="night"] .my-profile-actions button:not(#my-logout-btn):hover,
+html[data-theme="night"] .member-item:hover,
+html[data-theme="night"] .report-choice:hover,
+html[data-theme="night"] .report-choice:focus-visible,
+html[data-theme="night"] .reviewer-option:hover,
+html[data-theme="night"] .ai-review-option:focus-within,
+html[data-theme="night"] .message-context-menu button:not(#report-message-btn):hover,
+html[data-theme="night"] .message-context-menu button:not(#report-message-btn):focus-visible {
+  border-color: var(--theme-border);
+  color: var(--theme-selected-text);
+  background-color: var(--theme-hover-surface);
+}
+
+html[data-theme="night"] .message .mention-highlight {
+  color: var(--accent);
+  background-color: var(--theme-selected-surface);
+}
+
+html[data-theme="night"] .message .avatar,
+html[data-theme="night"] .member-avatar {
+  color: var(--theme-selected-text);
+  background-color: var(--theme-selected-surface);
+}
+
+html[data-theme="night"] .reply-preview #reply-cancel-btn:hover {
+  color: var(--theme-selected-text);
+  background-color: var(--theme-hover-surface);
+}
+
+html[data-theme="night"] .message.mine .quoted-message {
+  border-left-color: rgba(var(--accent-rgb), .65);
+  color: var(--theme-selected-text);
+  background-color: var(--theme-hover-surface);
+}
+
+html[data-theme="night"] #members-dialog,
+html[data-theme="night"] #my-dialog,
+html[data-theme="night"] #language-dialog,
+html[data-theme="night"] #user-info-dialog,
+html[data-theme="night"] #report-dialog,
+html[data-theme="night"] #reviewer-dialog,
+html[data-theme="night"] #submit-report-dialog,
+html[data-theme="night"] #ai-review-dialog,
+html[data-theme="night"] #ai-result-dialog,
+html[data-theme="night"] #report-inbox-dialog,
+html[data-theme="night"] #mute-dialog,
+html[data-theme="night"] #change-password-dialog,
+html[data-theme="night"] #unmute-dialog {
+  border-color: rgba(var(--accent-rgb), .28);
+}
+
+html[data-theme="night"] .project-support a:hover,
+html[data-theme="night"] .ai-service-source a:hover {
+  color: var(--accent);
+}
+
+.workers-ai-workspace-view {
+  color: var(--text-main, #292824);
+  background: var(--surface-main);
+}
+
+.workers-ai-topbar {
+  border-color: rgba(var(--accent-rgb), .2);
+}
+
+.workers-ai-kicker {
+  color: var(--theme-selected-text);
+}
+
+.workers-ai-new-chat:hover,
+.workers-ai-new-chat:focus-visible {
+  border-color: var(--theme-border);
+  color: var(--accent-ink);
+  background: var(--theme-hover-surface);
+}
+
+.workers-ai-send {
+  color: var(--accent-button-text);
+  background: var(--accent-strong);
+}
+
+.workers-ai-send:hover {
+  background: var(--accent-button-hover);
+}
+
+.workers-ai-send:focus-visible,
+.workers-ai-new-chat:focus-visible {
+  outline-color: var(--theme-focus-ring);
+}
+
+.workers-ai-chat-messages .ai-chat-message[data-role="user"] .ai-chat-message-content {
+  border-color: transparent;
+  color: var(--message-bubble-color);
+  background: var(--message-bubble-background);
+}
+
+.ai-workspace-view .ai-chat-message[data-role="user"] .ai-chat-message-content {
+  color: var(--message-bubble-color);
+  background: var(--message-bubble-background);
+}
+
+.workers-ai-composer:focus-within {
+  border-color: var(--theme-border);
+  box-shadow: 0 10px 32px rgba(var(--accent-rgb), .08), 0 0 0 3px var(--theme-hover-surface);
+}
+
+html[data-theme="night"] .workers-ai-workspace-view {
+  color: #e9e6df;
+  background: var(--surface-main);
+}
+
+html[data-theme="night"] .workers-ai-new-chat:hover,
+html[data-theme="night"] .workers-ai-new-chat:focus-visible {
+  border-color: var(--theme-border);
+  color: var(--accent);
+  background: var(--theme-hover-surface);
+}
+
+html[data-theme="night"] .workers-ai-composer:focus-within {
+  border-color: var(--theme-border);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, .2), 0 0 0 3px var(--theme-hover-surface);
+}
+
+html[data-theme="night"] .workers-ai-chat-messages .ai-chat-message[data-role="user"] .ai-chat-message-content {
+  border-color: transparent;
+  color: var(--message-bubble-color);
+  background: var(--message-bubble-background);
 }

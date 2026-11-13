@@ -198,11 +198,17 @@
                   </div>
                 </div>
                 <div class="ai-chat-web-setting">
-                  <button id="ai-web-search-toggle" class="ai-chat-web-toggle" type="button" aria-pressed="false">联网模式</button>
-                  <span class="ai-chat-help">
-                    <button class="ai-chat-help-button" type="button" aria-label="联网模式说明" aria-describedby="ai-web-search-tooltip">?</button>
-                    <span id="ai-web-search-tooltip" class="ai-chat-tooltip" role="tooltip">开启后，星火会搜索互联网中的相关信息，并参考搜索结果回答；关闭后仅使用模型已有知识。</span>
-                  </span>
+                  <div class="ai-chat-option-heading">
+                    <span>联网模式</span>
+                    <span class="ai-chat-help">
+                      <button class="ai-chat-help-button" type="button" aria-label="联网模式说明" aria-describedby="ai-web-search-tooltip">?</button>
+                      <span id="ai-web-search-tooltip" class="ai-chat-tooltip" role="tooltip">开启后，星火会搜索互联网中的相关信息，并参考搜索结果回答；关闭后仅使用模型已有知识。</span>
+                    </span>
+                  </div>
+                  <div id="ai-web-search-mode" class="ai-thinking-segment" data-value="disabled" role="radiogroup" aria-label="联网模式">
+                    <button type="button" role="radio" aria-checked="true" tabindex="0" data-web-search-mode="disabled">Disabled</button>
+                    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-web-search-mode="enabled">Enabled</button>
+                  </div>
                 </div>
               </div>
               <label class="sr-only" for="ai-chat-input">输入问题</label>
@@ -360,8 +366,6 @@
       <div id="language-picker" class="language-picker" role="group" aria-label="选择语言">
         <button type="button" data-language="zh-CN" lang="zh-CN">简体中文</button>
         <button type="button" data-language="en" lang="en">English</button>
-        <button type="button" data-language="ja" lang="ja">日本語</button>
-        <button type="button" data-language="zh-TW" lang="zh-TW">繁體中文</button>
       </div>
     </dialog>
 
