@@ -5437,3 +5437,110 @@ html[data-theme="night"] .workers-ai-chat-messages .ai-chat-message[data-role="u
   color: var(--message-bubble-color);
   background: var(--message-bubble-background);
 }
+
+html[data-theme="night"] {
+  --dialog-text-primary: color-mix(in srgb, var(--accent) 65%, #fff);
+  --dialog-text-secondary: color-mix(in srgb, var(--accent-secondary) 50%, #fff);
+}
+
+html[data-theme="night"] #members-dialog,
+html[data-theme="night"] #my-dialog,
+html[data-theme="night"] #language-dialog,
+html[data-theme="night"] #user-info-dialog,
+html[data-theme="night"] #report-dialog,
+html[data-theme="night"] #reviewer-dialog,
+html[data-theme="night"] #submit-report-dialog,
+html[data-theme="night"] #ai-review-dialog,
+html[data-theme="night"] #ai-result-dialog,
+html[data-theme="night"] #report-inbox-dialog,
+html[data-theme="night"] #report-violation-dialog,
+html[data-theme="night"] #mute-dialog,
+html[data-theme="night"] #change-password-dialog,
+html[data-theme="night"] #unmute-dialog {
+  border-color: rgba(var(--accent-rgb), .65);
+  color: var(--dialog-text-primary);
+  background: #000;
+}
+
+html[data-theme="night"] dialog[id] * {
+  color: var(--dialog-text-secondary);
+}
+
+html[data-theme="night"] dialog[id] :is(h1, h2, h3, strong) {
+  color: var(--dialog-text-primary);
+}
+
+html[data-theme="night"] dialog[id] :is(input, textarea, select) {
+  border-color: rgba(var(--accent-rgb), .5);
+  color: var(--dialog-text-primary);
+  background: #080808;
+}
+
+html[data-theme="night"] dialog[id] :is(input, textarea, select)::placeholder {
+  color: var(--dialog-text-secondary);
+}
+
+html[data-theme="night"] #change-password-form label,
+html[data-theme="night"] #change-password-form input::placeholder,
+html[data-theme="night"] #my-dialog .my-profile-name-row strong,
+html[data-theme="night"] #my-dialog .my-account-line,
+html[data-theme="night"] #my-dialog .my-account-line span {
+  color: var(--dialog-text-secondary);
+}
+
+html[data-theme="night"] #change-password-form input {
+  border-color: rgba(var(--accent-rgb), .5);
+  color: var(--dialog-text-secondary);
+  background: #080808;
+}
+
+html[data-theme="night"] #my-dialog .my-profile-name-row strong {
+  color: var(--dialog-text-primary);
+}
+
+html[data-theme="night"] #members-dialog #members-close,
+html[data-theme="night"] #my-dialog #my-dialog-close,
+html[data-theme="night"] #language-dialog #language-dialog-close,
+html[data-theme="night"] #user-info-dialog #user-info-close,
+html[data-theme="night"] #report-dialog #report-dialog-close,
+html[data-theme="night"] #reviewer-dialog #reviewer-dialog-close,
+html[data-theme="night"] #submit-report-dialog #submit-report-close,
+html[data-theme="night"] #ai-review-dialog #ai-review-close,
+html[data-theme="night"] #ai-result-dialog #ai-result-close,
+html[data-theme="night"] #report-inbox-dialog #report-inbox-close,
+html[data-theme="night"] #report-violation-dialog #report-violation-close,
+html[data-theme="night"] #mute-dialog #mute-dialog-close,
+html[data-theme="night"] #change-password-dialog #change-password-close,
+html[data-theme="night"] #unmute-dialog #unmute-dialog-close {
+  border-color: rgba(var(--accent-rgb), .5);
+  color: var(--dialog-text-primary);
+  background: #111;
+}
+
+html[data-theme="night"] dialog[id] .primary-btn {
+  color: var(--accent-button-text);
+}
+
+html[data-theme="night"] dialog[id] .secondary-btn,
+html[data-theme="night"] dialog[id] .report-dialog-actions button:not(.primary-btn),
+html[data-theme="night"] dialog[id] .report-inbox-actions button,
+html[data-theme="night"] dialog[id] .my-preference-actions button,
+html[data-theme="night"] dialog[id] .my-profile-actions button:not(#my-logout-btn) {
+  border-color: rgba(var(--accent-rgb), .4);
+  color: var(--dialog-text-secondary);
+  background: #080808;
+}
+
+html[data-theme="night"] dialog[id] :is(.report-choice, .ai-review-option, .report-inbox-item, .my-profile-identity, .my-preferences, .my-profile-actions) {
+  border-color: rgba(var(--accent-rgb), .35);
+  background: #080808;
+}
+
+html[data-theme="night"] dialog[id] :is(.report-choice:hover, .report-choice:focus-visible, .ai-review-option:focus-within) {
+  border-color: rgba(var(--accent-rgb), .7);
+  background: rgba(var(--accent-rgb), .12);
+}
+
+html[data-theme="night"] dialog[id] .report-inbox-message {
+  background: #080808;
+}
