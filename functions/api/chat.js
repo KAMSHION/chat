@@ -228,6 +228,19 @@ export async function onRequest(context) {
         return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
       }
 
+      let thinkingMode = payload.thinking;
+      if (thinkingMode === undefined || thinkingMode === false) {
+        thinkingMode = 'disabled';
+      } else if (thinkingMode === true) {
+        thinkingMode = 'enabled';
+      }
+      if (
+        typeof thinkingMode !== 'string' ||
+        !['disabled', 'auto', 'enabled'].includes(thinkingMode)
+      ) {
+        return json({ error: '星火AI请求无效，请检查输入内容。' }, 400);
+      }
+
       const apiKey = typeof env.XFYUN_API_KEY === 'string' ? env.XFYUN_API_KEY.trim() : '';
       if (!apiKey) return json({ error: '讯飞星火服务尚未配置，请联系网站管理员。' }, 503);
       const model = 'spark-x2.5-1.7b';
@@ -236,7 +249,7 @@ export async function onRequest(context) {
         model,
         messages,
         stream: false,
-        thinking: { type: payload.thinking === true ? 'enabled' : 'disabled' }
+        thinking: { type: thinkingMode }
       };
       if (payload.webSearch === true) {
         requestBody.tools = [{ type: 'web_search', web_search: { enable: true } }];
@@ -288,7 +301,7 @@ export async function onRequest(context) {
       const reasoning = providerPayload?.choices?.[0]?.message?.reasoning_content;
       return json({
         reply,
-        ...(payload.thinking === true && typeof reasoning === 'string' && reasoning.trim() ? { reasoning } : {})
+        ...(thinkingMode !== 'disabled' && typeof reasoning === 'string' && reasoning.trim() ? { reasoning } : {})
       });
     }
 

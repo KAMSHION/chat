@@ -53,7 +53,11 @@ const translations = {
   'Workers AI 请求无效，请检查输入内容。': 'The Workers AI request is invalid. Check your message.',
   '星火 AI 选项': 'Spark AI options',
   '思考模式': 'Thinking mode',
+  '思考模式说明': 'Thinking mode help',
   '联网模式': 'Web search mode',
+  '联网模式说明': 'Web search mode help',
+  'Disabled：关闭思考；Auto：由模型自动决定是否思考；Enabled：始终启用思考。若模型返回无效内容，请关闭思考模式以减少Token使用。': 'Disabled: Turn off thinking; Auto: Let the model decide whether to think; Enabled: Always enable thinking. If the model returns invalid content, turn off thinking mode to reduce token usage.',
+  '开启后，星火会搜索互联网中的相关信息，并参考搜索结果回答；关闭后仅使用模型已有知识。': 'When enabled, Spark searches the web for relevant information and uses the results to answer. When disabled, it relies only on the model’s existing knowledge.',
   'AI助手': 'AI assistant',
   'AI对话': 'AI conversation',
   '与讯飞星火模型对话。你发送的内容会传给讯飞星火处理。': 'Chat with iFLYTEK Spark. Messages you send are sent to iFLYTEK for processing.',
@@ -367,7 +371,11 @@ const localeTranslations = {
     '你好！我是讯飞星火AI，有什么可以帮你？': 'こんにちは！iFLYTEK Spark AI です。何かお手伝いできますか？',
     '星火 AI 选项': 'Spark AI オプション',
     '思考模式': '思考モード',
+    '思考模式说明': '思考モードの説明',
     '联网模式': 'ウェブ検索モード',
+    '联网模式说明': 'ウェブ検索モードの説明',
+    'Disabled：关闭思考；Auto：由模型自动决定是否思考；Enabled：始终启用思考。若模型返回无效内容，请关闭思考模式以减少Token使用。': 'Disabled：思考を無効化、Auto：モデルが思考するか自動判断、Enabled：常に思考を有効化します。モデルが無効な内容を返した場合は、思考モードをオフにしてトークン使用量を減らしてください。',
+    '开启后，星火会搜索互联网中的相关信息，并参考搜索结果回答；关闭后仅使用模型已有知识。': '有効にすると、Spark がウェブ上の関連情報を検索し、その結果を参考に回答します。無効の場合はモデルの既存知識のみを使用します。',
     '思考': '思考',
     '讯飞星火AI': 'iFLYTEK Spark AI',
     '输入问题，Enter 发送，Shift + Enter 换行': '質問を入力してください。Enter で送信、Shift + Enter で改行します。',
@@ -675,7 +683,11 @@ const localeTranslations = {
     '你好！我是讯飞星火AI，有什么可以帮你？': '你好！我是訊飛星火AI，有什麼可以幫你？',
     '星火 AI 选项': '星火 AI 選項',
     '思考模式': '思考模式',
+    '思考模式说明': '思考模式說明',
     '联网模式': '網路搜尋模式',
+    '联网模式说明': '網路搜尋模式說明',
+    'Disabled：关闭思考；Auto：由模型自动决定是否思考；Enabled：始终启用思考。若模型返回无效内容，请关闭思考模式以减少Token使用。': 'Disabled：關閉思考；Auto：由模型自動決定是否思考；Enabled：一律啟用思考。若模型回傳無效內容，請關閉思考模式以減少 Token 使用量。',
+    '开启后，星火会搜索互联网中的相关信息，并参考搜索结果回答；关闭后仅使用模型已有知识。': '開啟後，星火會搜尋網路上的相關資訊，並參考搜尋結果回答；關閉後僅使用模型既有知識。',
     '思考': '思考',
     '讯飞星火AI': '訊飛星火AI',
     '输入问题，Enter 发送，Shift + Enter 换行': '輸入問題，按 Enter 傳送，Shift + Enter 換行。',
@@ -1167,7 +1179,17 @@ function renderModelConversation(containerId, conversation, welcomeMessage, assi
     const content = document.createElement('p');
     content.className = 'ai-chat-message-content';
     content.textContent = message.content;
-    item.append(label, content);
+    if (message.kind === 'reasoning') {
+      const details = document.createElement('details');
+      details.className = 'ai-chat-reasoning';
+      const summary = document.createElement('summary');
+      summary.className = 'ai-chat-reasoning-summary';
+      summary.appendChild(label);
+      details.append(summary, content);
+      item.appendChild(details);
+    } else {
+      item.append(label, content);
+    }
     container.appendChild(item);
   });
   container.scrollTop = container.scrollHeight;
@@ -1201,18 +1223,20 @@ async function submitAiChat(event) {
   input.disabled = true;
   const submitButton = document.getElementById('ai-chat-submit-btn');
   const clearButton = document.getElementById('ai-chat-clear-btn');
-  const thinkingToggle = document.getElementById('ai-thinking-toggle');
+  const thinkingModeControl = document.getElementById('ai-thinking-mode');
+  const thinkingModeButtons = [...thinkingModeControl.querySelectorAll('[data-thinking-mode]')];
+  const thinkingMode = thinkingModeControl.dataset.value;
   const webSearchToggle = document.getElementById('ai-web-search-toggle');
   submitButton.disabled = true;
   clearButton.disabled = true;
-  thinkingToggle.disabled = true;
+  thinkingModeButtons.forEach(button => { button.disabled = true; });
   webSearchToggle.disabled = true;
 
   try {
     const response = await api('chatWithAi', 'POST', {
       messages: aiConversation.filter(message => message.kind !== 'reasoning'),
-      thinking: thinkingToggle.checked,
-      webSearch: webSearchToggle.checked
+      thinking: thinkingMode,
+      webSearch: webSearchToggle.getAttribute('aria-pressed') === 'true'
     });
     if (response.error) throw new Error(response.error);
     if (typeof response.reply !== 'string' || !response.reply.trim()) {
@@ -1232,7 +1256,7 @@ async function submitAiChat(event) {
     input.disabled = false;
     submitButton.disabled = false;
     clearButton.disabled = false;
-    thinkingToggle.disabled = false;
+    thinkingModeButtons.forEach(button => { button.disabled = false; });
     webSearchToggle.disabled = false;
     input.focus();
   }
@@ -2937,6 +2961,44 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.querySelectorAll('[data-accent-choice]').forEach(option => {
     option.addEventListener('click', () => setAccentColor(option.dataset.accentChoice));
+  });
+  const thinkingModeControl = document.getElementById('ai-thinking-mode');
+  const thinkingModeButtons = [...thinkingModeControl.querySelectorAll('[data-thinking-mode]')];
+  const selectThinkingMode = selectedButton => {
+    thinkingModeControl.dataset.value = selectedButton.dataset.thinkingMode;
+    thinkingModeButtons.forEach(button => {
+      const selected = button === selectedButton;
+      button.setAttribute('aria-checked', String(selected));
+      button.tabIndex = selected ? 0 : -1;
+    });
+  };
+  thinkingModeButtons.forEach((button, index) => {
+    button.addEventListener('click', () => selectThinkingMode(button));
+    button.addEventListener('keydown', event => {
+      let nextIndex;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        nextIndex = (index + 1) % thinkingModeButtons.length;
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        nextIndex = (index - 1 + thinkingModeButtons.length) % thinkingModeButtons.length;
+      } else if (event.key === 'Home') {
+        nextIndex = 0;
+      } else if (event.key === 'End') {
+        nextIndex = thinkingModeButtons.length - 1;
+      } else {
+        return;
+      }
+      event.preventDefault();
+      const nextButton = thinkingModeButtons[nextIndex];
+      selectThinkingMode(nextButton);
+      nextButton.focus();
+    });
+  });
+  const webSearchToggle = document.getElementById('ai-web-search-toggle');
+  webSearchToggle.addEventListener('click', () => {
+    webSearchToggle.setAttribute(
+      'aria-pressed',
+      String(webSearchToggle.getAttribute('aria-pressed') !== 'true')
+    );
   });
   document.querySelectorAll('[data-workspace-view]').forEach(button => {
     button.addEventListener('click', () => showWorkspaceView(button.dataset.workspaceView));

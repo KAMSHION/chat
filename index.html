@@ -183,16 +183,27 @@
             <p id="ai-chat-status" class="ai-chat-status" role="status" aria-live="polite"></p>
             <form id="ai-chat-form" class="ai-chat-form">
               <div class="ai-chat-options" role="group" aria-label="讯飞星火 AI 选项">
-                <label class="ai-chat-toggle">
-                  <input id="ai-thinking-toggle" type="checkbox">
-                  <span class="ai-chat-toggle-track" aria-hidden="true"></span>
-                  <span class="ai-chat-toggle-label">思考模式</span>
-                </label>
-                <label class="ai-chat-toggle">
-                  <input id="ai-web-search-toggle" type="checkbox">
-                  <span class="ai-chat-toggle-track" aria-hidden="true"></span>
-                  <span class="ai-chat-toggle-label">联网模式</span>
-                </label>
+                <div class="ai-chat-option-block ai-thinking-setting">
+                  <div class="ai-chat-option-heading">
+                    <span>思考模式</span>
+                    <span class="ai-chat-help">
+                      <button class="ai-chat-help-button" type="button" aria-label="思考模式说明" aria-describedby="ai-thinking-tooltip">?</button>
+                      <span id="ai-thinking-tooltip" class="ai-chat-tooltip" role="tooltip">Disabled：关闭思考；Auto：由模型自动决定是否思考；Enabled：始终启用思考。若模型返回无效内容，请关闭思考模式以减少Token使用。</span>
+                    </span>
+                  </div>
+                  <div id="ai-thinking-mode" class="ai-thinking-segment" data-value="disabled" role="radiogroup" aria-label="思考模式">
+                    <button type="button" role="radio" aria-checked="true" tabindex="0" data-thinking-mode="disabled">Disabled</button>
+                    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-thinking-mode="auto">Auto</button>
+                    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-thinking-mode="enabled">Enabled</button>
+                  </div>
+                </div>
+                <div class="ai-chat-web-setting">
+                  <button id="ai-web-search-toggle" class="ai-chat-web-toggle" type="button" aria-pressed="false">联网模式</button>
+                  <span class="ai-chat-help">
+                    <button class="ai-chat-help-button" type="button" aria-label="联网模式说明" aria-describedby="ai-web-search-tooltip">?</button>
+                    <span id="ai-web-search-tooltip" class="ai-chat-tooltip" role="tooltip">开启后，星火会搜索互联网中的相关信息，并参考搜索结果回答；关闭后仅使用模型已有知识。</span>
+                  </span>
+                </div>
               </div>
               <label class="sr-only" for="ai-chat-input">输入问题</label>
               <textarea id="ai-chat-input" rows="3" placeholder="输入问题，Enter 发送，Shift + Enter 换行"></textarea>
