@@ -23,8 +23,15 @@ let reportReviewerName = '';
 let pendingReportReview = null;
 let aiConversation = [];
 let isAiRequestInProgress = false;
-let workersAiConversation = [];
-let isWorkersAiRequestInProgress = false;
+const workersAiModelConfigs = Object.freeze({
+  'workers-ai': { assistantName: 'Cloudflare Workers AI' },
+  'zai-chatglm': { assistantName: 'Zai · ChatGLM' },
+  'ali-qwen': { assistantName: 'ALI · Qwen' }
+});
+const workersAiConversations = new Map(
+  Object.keys(workersAiModelConfigs).map(modelKey => [modelKey, []])
+);
+const workersAiRequestsInProgress = new Set();
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 const workspaceAnimationTimers = new WeakMap();
@@ -37,6 +44,11 @@ const translations = {
   '讯飞 · 星火AI': 'iFLYTEK · Spark AI',
   '讯飞星火 AI 选项': 'iFLYTEK Spark AI options',
   'Cloudflare · WorkersAI': 'Cloudflare · Workers AI',
+  'Zai · ChatGLM 对话': 'Z.ai · ChatGLM conversation',
+  'ALI · Qwen 对话': 'ALI · Qwen conversation',
+  '有什么可以帮你的吗？': 'What can I help you with?',
+  '询问 Qwen': 'Ask Qwen',
+  '模型回答可能不准确，请自行核实重要信息。': 'AI responses may be inaccurate. Please verify important information.',
   'Workers AI': 'Workers AI',
   'CLOUDFLARE WORKERS AI': 'CLOUDFLARE WORKERS AI',
   '有什么可以帮你？': 'What can I help with?',
@@ -446,7 +458,9 @@ function applyLanguage(root = document) {
     time.textContent = formatMessageTime(Number(time.dataset.timestamp));
   });
   if (document.getElementById('ai-chat-messages')) renderAiConversation();
-  if (document.getElementById('workers-ai-chat-messages')) renderWorkersAiConversation();
+  document.querySelectorAll('[data-workers-ai-model]').forEach(page => {
+    renderWorkersAiConversation(page.dataset.workersAiModel);
+  });
 }
 
 function formatMessageTime(timestamp) {
@@ -511,16 +525,22 @@ function renderAiConversation() {
   renderModelConversation('ai-chat-messages', aiConversation, '你好！我是讯飞星火AI，有什么可以帮你？', '讯飞星火AI');
 }
 
-function renderWorkersAiConversation() {
-  const welcome = document.getElementById('workers-ai-welcome');
-  if (welcome) welcome.hidden = workersAiConversation.length > 0;
-  const container = document.getElementById('workers-ai-chat-messages');
+function renderWorkersAiConversation(modelKey) {
+  const page = [...document.querySelectorAll('[data-workers-ai-model]')]
+    .find(element => element.dataset.workersAiModel === modelKey);
+  const conversation = workersAiConversations.get(modelKey);
+  const config = workersAiModelConfigs[modelKey];
+  if (!page || !conversation || !config) return;
+  const welcome = page.querySelector('[data-workers-ai-welcome]');
+  if (welcome) welcome.hidden = conversation.length > 0;
+  page.classList.toggle('is-empty', conversation.length === 0);
+  const container = page.querySelector('[data-workers-ai-messages]');
   if (!container) return;
-  if (workersAiConversation.length === 0) {
+  if (conversation.length === 0) {
     container.replaceChildren();
     return;
   }
-  renderModelConversation('workers-ai-chat-messages', workersAiConversation, '', 'Cloudflare Workers AI');
+  renderModelConversation(container.id, conversation, '', config.assistantName);
 }
 
 function renderModelConversation(containerId, conversation, welcomeMessage, assistantName) {
@@ -635,51 +655,57 @@ async function submitAiChat(event) {
   }
 }
 
-function clearWorkersAiConversation() {
-  if (isWorkersAiRequestInProgress) return;
-  workersAiConversation = [];
-  document.getElementById('workers-ai-chat-status').textContent = '';
-  renderWorkersAiConversation();
-  document.getElementById('workers-ai-chat-input').focus();
+function clearWorkersAiConversation(event) {
+  const page = event.currentTarget.closest('[data-workers-ai-model]');
+  const modelKey = page?.dataset.workersAiModel;
+  if (!modelKey || workersAiRequestsInProgress.has(modelKey)) return;
+  workersAiConversations.set(modelKey, []);
+  page.querySelector('[data-workers-ai-status]').textContent = '';
+  renderWorkersAiConversation(modelKey);
+  page.querySelector('.workers-ai-chat-input').focus();
 }
 
 async function submitWorkersAiChat(event) {
   event.preventDefault();
-  if (isWorkersAiRequestInProgress) return;
+  const page = event.currentTarget.closest('[data-workers-ai-model]');
+  const modelKey = page?.dataset.workersAiModel;
+  const conversation = workersAiConversations.get(modelKey);
+  const config = workersAiModelConfigs[modelKey];
+  if (!page || !modelKey || !conversation || !config || workersAiRequestsInProgress.has(modelKey)) return;
 
-  const input = document.getElementById('workers-ai-chat-input');
+  const input = page.querySelector('.workers-ai-chat-input');
   const prompt = input.value.trim();
-  const status = document.getElementById('workers-ai-chat-status');
+  const status = page.querySelector('[data-workers-ai-status]');
   if (!prompt) {
     status.textContent = localizeText('请输入问题');
     input.focus();
     return;
   }
-  workersAiConversation.push({ role: 'user', content: prompt });
-  renderWorkersAiConversation();
+  conversation.push({ role: 'user', content: prompt });
+  renderWorkersAiConversation(modelKey);
   input.value = '';
   status.textContent = localizeText('思考中...');
-  isWorkersAiRequestInProgress = true;
+  workersAiRequestsInProgress.add(modelKey);
   input.disabled = true;
-  const submitButton = document.getElementById('workers-ai-chat-submit-btn');
-  const clearButton = document.getElementById('workers-ai-chat-clear-btn');
+  const submitButton = page.querySelector('.workers-ai-send');
+  const clearButton = page.querySelector('[data-workers-ai-clear]');
   submitButton.disabled = true;
   clearButton.disabled = true;
 
   try {
-    const response = await api('chatWithWorkersAi', 'POST', { messages: workersAiConversation });
+    const response = await api('chatWithWorkersAi', 'POST', { model: modelKey, messages: conversation });
     if (response.error) throw new Error(response.error);
     if (typeof response.reply !== 'string' || !response.reply.trim()) {
       throw new Error('Workers AI 返回了无效响应，请稍后重试。');
     }
-    workersAiConversation.push({ role: 'assistant', content: response.reply });
-    renderWorkersAiConversation();
+    conversation.push({ role: 'assistant', content: response.reply });
+    renderWorkersAiConversation(modelKey);
     status.textContent = '';
   } catch (error) {
     status.textContent = localizeText(error.message) || localizeText('AI暂时无法回复，请稍后重试。');
     console.error('Cloudflare Workers AI 请求失败：', error);
   } finally {
-    isWorkersAiRequestInProgress = false;
+    workersAiRequestsInProgress.delete(modelKey);
     input.disabled = false;
     submitButton.disabled = false;
     clearButton.disabled = false;
@@ -1216,6 +1242,8 @@ function showWorkspaceView(viewName) {
     chat: document.getElementById('chat-view'),
     ai: document.getElementById('ai-view'),
     'workers-ai': document.getElementById('workers-ai-view'),
+    'zai-chatglm': document.getElementById('zai-chatglm-view'),
+    'ali-qwen': document.getElementById('ali-qwen-view'),
     account: document.getElementById('account-view'),
     appearance: document.getElementById('appearance-view')
   };
@@ -2436,14 +2464,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   document.getElementById('ai-chat-clear-btn').addEventListener('click', clearAiConversation);
-  document.getElementById('workers-ai-chat-form').addEventListener('submit', submitWorkersAiChat);
-  document.getElementById('workers-ai-chat-input').addEventListener('keydown', event => {
-    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
-      event.preventDefault();
-      event.currentTarget.form.requestSubmit();
-    }
+  document.querySelectorAll('[data-workers-ai-form]').forEach(form => {
+    form.addEventListener('submit', submitWorkersAiChat);
   });
-  document.getElementById('workers-ai-chat-clear-btn').addEventListener('click', clearWorkersAiConversation);
+  document.querySelectorAll('.workers-ai-chat-input').forEach(input => {
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+        event.currentTarget.form.requestSubmit();
+      }
+    });
+  });
+  document.querySelectorAll('[data-workers-ai-clear]').forEach(button => {
+    button.addEventListener('click', clearWorkersAiConversation);
+  });
 
   const messages = document.getElementById('messages');
   const contextMenu = document.getElementById('message-context-menu');

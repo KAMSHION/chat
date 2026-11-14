@@ -3403,9 +3403,9 @@ html[data-accent="miku"] {
   --accent: #35b88a;
   --accent-transition: #33a8b7;
   --accent-secondary: #66ccff;
-  --accent-strong: #66ccff;
-  --accent-button-hover: #5cbfeb;
-  --accent-button-text: #173b4a;
+  --accent-strong: #35b88a;
+  --accent-button-hover: #2fa77d;
+  --accent-button-text: #fff;
   --message-bubble-background: #66ccff;
   --message-bubble-color: #fff;
   --message-bubble-quote-background: rgba(255, 255, 255, .62);
@@ -3413,7 +3413,7 @@ html[data-accent="miku"] {
   --accent-ink: #176958;
   --accent-soft: #eaf8f4;
   --accent-soft-rgb: 234, 248, 244;
-  --scene-base: #eef8f6;
+  --scene-base: #eaf8f3;
   --scene-transition-rgb: 51, 168, 183;
   --scene-secondary-rgb: 102, 204, 255;
   --surface-sidebar-end: #f5fbf9;
@@ -3661,6 +3661,17 @@ html[data-theme="night"] .message.mine .quoted-message {
 .sidebar-nav-item.active .sidebar-nav-icon {
   color: var(--accent);
   transition: color .2s, transform .3s cubic-bezier(.2, .75, .25, 1);
+}
+
+#zai-chatglm-view-btn .sidebar-nav-icon {
+  display: grid;
+  place-items: center;
+}
+
+.sidebar-nav-icon-svg {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 .sidebar-nav-item.active .sidebar-nav-icon {
@@ -5543,4 +5554,172 @@ html[data-theme="night"] dialog[id] :is(.report-choice:hover, .report-choice:foc
 
 html[data-theme="night"] dialog[id] .report-inbox-message {
   background: #080808;
+}
+
+.glm-chat-view,
+.qwen-chat-view {
+  background: #fff;
+}
+
+.glm-chat-view .workers-ai-composer {
+  min-height: 130px;
+  padding: 14px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 24px;
+}
+
+.glm-chat-view .workers-ai-composer textarea {
+  min-height: 70px;
+  padding: 2px 0 10px;
+}
+
+.glm-chat-view .workers-ai-composer-footer {
+  width: 100%;
+}
+
+.glm-chat-view .glm-composer-plus {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  flex: 0 0 28px;
+  place-items: center;
+  border: 1px solid #e5e5e5;
+  border-radius: 50%;
+  color: #777;
+}
+
+.glm-chat-view .glm-composer-plus svg,
+.qwen-chat-view .qwen-composer-plus svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.7;
+}
+
+.glm-chat-view .workers-ai-composer-footer .workers-ai-model-id {
+  color: #626262;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.glm-chat-view .workers-ai-send {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.qwen-chat-view.is-empty .workers-ai-main {
+  justify-content: center;
+}
+
+.qwen-chat-view.is-empty .workers-ai-welcome {
+  position: static;
+  width: 100%;
+  margin: 0 0 38px;
+  padding: 0;
+  transform: none;
+  flex: 0 0 auto;
+  animation: none;
+}
+
+.qwen-chat-view.is-empty .workers-ai-welcome h2 {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.qwen-chat-view.is-empty .workers-ai-chat-messages,
+.qwen-chat-view.is-empty .workers-ai-chat-status {
+  display: none;
+}
+
+.qwen-chat-view .qwen-composer {
+  min-height: 58px;
+  padding: 0 12px 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 999px;
+}
+
+.qwen-chat-view .qwen-composer-plus {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  flex: 0 0 24px;
+  place-items: center;
+  color: #373737;
+}
+
+.qwen-chat-view .qwen-composer textarea {
+  width: auto;
+  min-width: 0;
+  min-height: 30px;
+  max-height: 120px;
+  padding: 4px 0;
+  flex: 1 1 auto;
+}
+
+.qwen-chat-view .qwen-model-name {
+  color: #373737;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.qwen-chat-view .workers-ai-send {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+}
+
+html[data-theme="night"] .glm-chat-view,
+html[data-theme="night"] .qwen-chat-view {
+  background: var(--surface-main);
+}
+
+html[data-theme="night"] .glm-chat-view .glm-composer-plus,
+html[data-theme="night"] .qwen-chat-view .qwen-composer-plus,
+html[data-theme="night"] .qwen-chat-view .qwen-model-name {
+  color: #d7dce5;
+}
+
+html[data-theme="night"] .glm-chat-view .workers-ai-composer-footer .workers-ai-model-id,
+html[data-theme="night"] .qwen-chat-view .qwen-model-name::after {
+  color: #c1c8d4;
+}
+
+html[data-accent="miku"] body {
+  background:
+    radial-gradient(ellipse at 10% 12%, rgba(var(--accent-rgb), .2), transparent 34%),
+    radial-gradient(ellipse at 52% 100%, rgba(var(--scene-transition-rgb), .13), transparent 39%),
+    radial-gradient(ellipse at 92% 88%, rgba(var(--scene-secondary-rgb), .24), transparent 36%),
+    var(--scene-base);
+}
+
+html[data-theme="night"][data-accent="miku"] body {
+  background:
+    radial-gradient(ellipse at 10% 12%, rgba(var(--accent-rgb), .21), transparent 34%),
+    radial-gradient(ellipse at 52% 100%, rgba(var(--scene-transition-rgb), .15), transparent 39%),
+    radial-gradient(ellipse at 92% 88%, rgba(var(--scene-secondary-rgb), .2), transparent 36%),
+    var(--scene-base);
+}
+
+@media (max-width: 600px) {
+  .glm-chat-view .workers-ai-composer {
+    min-height: 112px;
+  }
+
+  .qwen-chat-view .qwen-composer {
+    gap: 9px;
+    padding-left: 13px;
+  }
+
+  .qwen-chat-view .qwen-model-name {
+    font-size: 10px;
+  }
 }

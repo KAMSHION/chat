@@ -313,6 +313,16 @@ export async function onRequest(context) {
         return json({ error: 'Workers AI 请求无效，请检查输入内容。' }, 400);
       }
 
+      const workersAiModels = {
+        'workers-ai': '@cf/meta/llama-3.2-1b-instruct',
+        'zai-chatglm': '@cf/zai-org/glm-4.7-flash',
+        'ali-qwen': '@cf/qwen/qwen3-30b-a3b-fp8'
+      };
+      const model = payload?.model === undefined ? 'workers-ai' : payload.model;
+      if (typeof model !== 'string' || !Object.prototype.hasOwnProperty.call(workersAiModels, model)) {
+        return json({ error: 'Workers AI 请求无效，请检查输入内容。' }, 400);
+      }
+
       if (!Array.isArray(payload?.messages) || payload.messages.length === 0) {
         return json({ error: 'Workers AI 请求无效，请检查输入内容。' }, 400);
       }
@@ -342,7 +352,7 @@ export async function onRequest(context) {
       let providerResponse;
       try {
         providerResponse = await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/@cf/meta/llama-3.2-1b-instruct`,
+          `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${workersAiModels[model]}`,
           {
             method: 'POST',
             headers: {

@@ -96,6 +96,21 @@
           <button id="workers-ai-view-btn" class="sidebar-nav-item" type="button" data-workspace-view="workers-ai">
             <span class="sidebar-nav-icon" aria-hidden="true">☁</span><span>Cloudflare · WorkersAI</span>
           </button>
+          <button id="zai-chatglm-view-btn" class="sidebar-nav-item" type="button" data-workspace-view="zai-chatglm">
+            <span class="sidebar-nav-icon" aria-hidden="true">
+              <svg class="sidebar-nav-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+                <rect x="1.49" y="1.49" width="27.02" height="27.02" rx="4" fill="var(--accent)" stroke="var(--accent-button-text)" stroke-width="0.6317"/>
+                <g fill="var(--surface-sidebar-end)">
+                  <path d="M15.47 7.1l-1.3 1.85c-.2.29-.54.47-.9.47H6.17V7.09h9.3z"/>
+                  <polygon points="24.3,7.1 13.14,22.91 5.7,22.91 16.86,7.1"/>
+                  <path d="M14.53 22.91l1.31-1.86c.2-.29.54-.47.9-.47h7.09v2.33z"/>
+                </g>
+              </svg>
+            </span><span>Zai · ChatGLM</span>
+          </button>
+          <button id="ali-qwen-view-btn" class="sidebar-nav-item" type="button" data-workspace-view="ali-qwen">
+            <span class="sidebar-nav-icon" aria-hidden="true">✦</span><span>ALI · Qwen</span>
+          </button>
         </nav>
         <section id="sidebar-admin-section" class="sidebar-admin" aria-labelledby="sidebar-admin-title" hidden>
           <h2 id="sidebar-admin-title">管理员</h2>
@@ -221,16 +236,16 @@
           </div>
         </section>
 
-        <section id="workers-ai-view" class="workspace-view workers-ai-workspace-view" aria-label="Cloudflare Workers AI" hidden>
+        <section id="workers-ai-view" class="workspace-view workers-ai-workspace-view" data-workers-ai-model="workers-ai" aria-label="Cloudflare Workers AI" hidden>
           <header class="workers-ai-topbar">
             <h1 class="workers-ai-wordmark">Workers AI</h1>
-            <button id="workers-ai-chat-clear-btn" class="workers-ai-new-chat" type="button">
+            <button id="workers-ai-chat-clear-btn" class="workers-ai-new-chat" data-workers-ai-clear type="button">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
               <span>新建对话</span>
             </button>
           </header>
           <div class="workers-ai-main">
-            <section id="workers-ai-welcome" class="workers-ai-welcome" aria-labelledby="workers-ai-view-title">
+            <section id="workers-ai-welcome" class="workers-ai-welcome" data-workers-ai-welcome aria-labelledby="workers-ai-view-title">
               <svg class="workers-ai-logo" viewBox="0 0 460 271.2" role="img" aria-label="Cloudflare">
                 <path fill="#FF9911" d="M328.6,125.6c-0.8,0-1.5,0.6-1.8,1.4l-4.8,16.7c-2.1,7.2-1.3,13.8,2.2,18.7c3.2,4.5,8.6,7.1,15.1,7.4l26.2,1.6c0.8,0,1.5,0.4,1.9,1c0.4,0.6,0.5,1.5,0.3,2.2c-0.4,1.2-1.6,2.1-2.9,2.2l-27.3,1.6c-14.8,0.7-30.7,12.6-36.3,27.2l-2,5.1c-0.4,1,0.3,2,1.4,2h93.8c1.1,0,2.1-0.7,2.4-1.8c1.6-5.8,2.5-11.9,2.5-18.2c0-37-30.2-67.2-67.3-67.2C330.9,125.5,329.7,125.5,328.6,125.6z"/>
                 <path fill="#FF5E1F" d="M292.8,204.4c2.1-7.2,1.3-13.8-2.2-18.7c-3.2-4.5-8.6-7.1-15.1-7.4l-123.1-1.6c-0.8,0-1.5-0.4-1.9-1s-0.5-1.4-0.3-2.2c0.4-1.2,1.6-2.1,2.9-2.2l124.2-1.6c14.7-0.7,30.7-12.6,36.3-27.2l7.1-18.5c0.3-0.8,0.4-1.6,0.2-2.4c-8-36.2-40.3-63.2-78.9-63.2c-35.6,0-65.8,23-76.6,54.9c-7-5.2-15.9-8-25.5-7.1c-17.1,1.7-30.8,15.4-32.5,32.5c-0.4,4.4-0.1,8.7,0.9,12.7c-27.9,0.8-50.2,23.6-50.2,51.7c0,2.5,0.2,5,0.5,7.5c0.2,1.2,1.2,2.1,2.4,2.1h227.2c1.3,0,2.5-0.9,2.9-2.2L292.8,204.4z"/>
@@ -239,13 +254,13 @@
               <h2 id="workers-ai-view-title">有什么可以帮你？</h2>
               <p>问我任何问题，或告诉我你正在做什么。</p>
             </section>
-            <div id="workers-ai-chat-messages" class="workers-ai-chat-messages" aria-live="polite" aria-label="AI对话"></div>
-            <p id="workers-ai-chat-status" class="workers-ai-chat-status" role="status" aria-live="polite"></p>
-            <form id="workers-ai-chat-form" class="workers-ai-composer">
+            <div id="workers-ai-chat-messages" class="workers-ai-chat-messages" data-workers-ai-messages aria-live="polite" aria-label="AI对话"></div>
+            <p id="workers-ai-chat-status" class="workers-ai-chat-status" data-workers-ai-status role="status" aria-live="polite"></p>
+            <form id="workers-ai-chat-form" class="workers-ai-composer" data-workers-ai-form>
               <label class="sr-only" for="workers-ai-chat-input">输入问题</label>
-              <textarea id="workers-ai-chat-input" rows="2" placeholder="给 Workers AI 发送消息..." aria-label="输入问题"></textarea>
+              <textarea id="workers-ai-chat-input" class="workers-ai-chat-input" rows="2" placeholder="给 Workers AI 发送消息..." aria-label="输入问题"></textarea>
               <div class="workers-ai-composer-footer">
-                <span>@cf/meta/llama-3.2-1b-instruct</span>
+                <span class="workers-ai-model-id">@cf/meta/llama-3.2-1b-instruct</span>
                 <div>
                   <span class="workers-ai-shortcut">Enter 发送 · Shift + Enter 换行</span>
                   <button id="workers-ai-chat-submit-btn" class="workers-ai-send" type="submit" aria-label="发送消息">
@@ -255,6 +270,65 @@
               </div>
             </form>
             <p class="workers-ai-disclaimer">Workers AI 的回答可能不准确，请自行核实重要信息。</p>
+          </div>
+        </section>
+
+        <section id="zai-chatglm-view" class="workspace-view workers-ai-workspace-view glm-chat-view" data-workers-ai-model="zai-chatglm" aria-label="Zai · ChatGLM" hidden>
+          <header class="workers-ai-topbar">
+            <h1 class="workers-ai-wordmark">Zai · ChatGLM</h1>
+            <button class="workers-ai-new-chat" data-workers-ai-clear type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              <span>新建对话</span>
+            </button>
+          </header>
+          <div class="workers-ai-main">
+            <div id="zai-chatglm-messages" class="workers-ai-chat-messages" data-workers-ai-messages aria-live="polite" aria-label="Zai · ChatGLM 对话"></div>
+            <p class="workers-ai-chat-status" data-workers-ai-status role="status" aria-live="polite"></p>
+            <form class="workers-ai-composer glm-composer" data-workers-ai-form>
+              <label class="sr-only" for="zai-chatglm-input">输入问题</label>
+              <textarea id="zai-chatglm-input" class="workers-ai-chat-input" rows="2" placeholder="发送消息" aria-label="输入问题"></textarea>
+              <div class="workers-ai-composer-footer">
+                <span class="glm-composer-plus" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                </span>
+                <div>
+                  <span class="workers-ai-model-id">GLM-4.7-Flash</span>
+                  <button class="workers-ai-send" type="submit" aria-label="发送消息">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                  </button>
+                </div>
+              </div>
+            </form>
+            <p class="workers-ai-disclaimer">模型回答可能不准确，请自行核实重要信息。</p>
+          </div>
+        </section>
+
+        <section id="ali-qwen-view" class="workspace-view workers-ai-workspace-view qwen-chat-view" data-workers-ai-model="ali-qwen" aria-label="ALI · Qwen" hidden>
+          <header class="workers-ai-topbar">
+            <h1 class="workers-ai-wordmark">ALI · Qwen</h1>
+            <button class="workers-ai-new-chat" data-workers-ai-clear type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              <span>新建对话</span>
+            </button>
+          </header>
+          <div class="workers-ai-main">
+            <section class="workers-ai-welcome qwen-welcome" data-workers-ai-welcome>
+              <h2>有什么可以帮你的吗？</h2>
+            </section>
+            <div id="ali-qwen-messages" class="workers-ai-chat-messages" data-workers-ai-messages aria-live="polite" aria-label="ALI · Qwen 对话"></div>
+            <p class="workers-ai-chat-status" data-workers-ai-status role="status" aria-live="polite"></p>
+            <form class="workers-ai-composer qwen-composer" data-workers-ai-form>
+              <label class="sr-only" for="ali-qwen-input">输入问题</label>
+              <span class="qwen-composer-plus" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              </span>
+              <textarea id="ali-qwen-input" class="workers-ai-chat-input" rows="1" placeholder="询问 Qwen" aria-label="输入问题"></textarea>
+              <span class="qwen-model-name">Qwen3-30B</span>
+              <button class="workers-ai-send" type="submit" aria-label="发送消息">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              </button>
+            </form>
+            <p class="workers-ai-disclaimer">模型回答可能不准确，请自行核实重要信息。</p>
           </div>
         </section>
 
