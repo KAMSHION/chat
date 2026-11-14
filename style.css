@@ -3406,7 +3406,7 @@ html[data-accent="miku"] {
   --accent-strong: #35b88a;
   --accent-button-hover: #2fa77d;
   --accent-button-text: #fff;
-  --message-bubble-background: #66ccff;
+  --message-bubble-background: #35b88a;
   --message-bubble-color: #fff;
   --message-bubble-quote-background: rgba(255, 255, 255, .62);
   --accent-rgb: 53, 184, 138;
